@@ -1,3 +1,5 @@
+import { useState, useRef } from 'react';
+import type { PointerEvent } from 'react';
 import type { PostItem, BrandKit, ExtractionStatus } from '../hooks/useBackend';
 import { LOADING_STEPS } from '../hooks/useBackend';
 
@@ -20,6 +22,66 @@ export default function CenterColumn({
   onPlatformChange,
   onPublish
 }: CenterColumnProps) {
+  // Drag and Resize State
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [width, setWidth] = useState(480); // default width in pixels
+  
+  const dragStart = useRef({ x: 0, y: 0 });
+  const posStart = useRef({ x: 0, y: 0 });
+  const resizeStart = useRef({ x: 0, y: 0, w: 0 });
+  const activeResizeHandle = useRef<'tl' | 'tr' | 'bl' | 'br' | null>(null);
+  const isDragging = useRef(false);
+
+  const startDrag = (e: PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    isDragging.current = true;
+    dragStart.current = { x: e.clientX, y: e.clientY };
+    posStart.current = { x: position.x, y: position.y };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const onDragMove = (e: PointerEvent<HTMLDivElement>) => {
+    if (!isDragging.current) return;
+    const dx = e.clientX - dragStart.current.x;
+    const dy = e.clientY - dragStart.current.y;
+    setPosition({
+      x: posStart.current.x + dx,
+      y: posStart.current.y + dy
+    });
+  };
+
+  const onDragEnd = (e: PointerEvent<HTMLDivElement>) => {
+    isDragging.current = false;
+    e.currentTarget.releasePointerCapture(e.pointerId);
+  };
+
+  const startResize = (e: PointerEvent<HTMLDivElement>, handle: 'tl' | 'tr' | 'bl' | 'br') => {
+    e.preventDefault();
+    e.stopPropagation();
+    activeResizeHandle.current = handle;
+    resizeStart.current = { x: e.clientX, y: e.clientY, w: width };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const onResizeMove = (e: PointerEvent<HTMLDivElement>) => {
+    const handle = activeResizeHandle.current;
+    if (!handle) return;
+    const dx = e.clientX - resizeStart.current.x;
+    
+    let dw = 0;
+    if (handle === 'br' || handle === 'tr') {
+      dw = dx;
+    } else if (handle === 'bl' || handle === 'tl') {
+      dw = -dx;
+    }
+
+    setWidth(Math.max(340, Math.min(680, resizeStart.current.w + dw)));
+  };
+
+  const onResizeEnd = (e: PointerEvent<HTMLDivElement>) => {
+    activeResizeHandle.current = null;
+    e.currentTarget.releasePointerCapture(e.pointerId);
+  };
 
   // Generate initials for avatar representation
   const getInitials = (domain?: string) => {
@@ -41,24 +103,40 @@ export default function CenterColumn({
       {/* Top Selector Panel */}
       <div className="h-14 border-b border-zinc-200 dark:border-zinc-800/50 flex items-center justify-between px-6 bg-white/80 dark:bg-[#09090b]/80 backdrop-blur-md z-10 transition-colors duration-250">
         
-        {/* Segmented Platform Tabs */}
-        <div className="flex bg-zinc-100 dark:bg-[#0d0d11] border border-zinc-200 dark:border-zinc-800/50 p-0.5 rounded-md transition-colors duration-250">
-          {(['LinkedIn', 'Instagram', 'X'] as const).map((platform) => {
-            const isSel = selectedPlatform === platform;
-            return (
-              <button
-                key={platform}
-                onClick={() => onPlatformChange(platform)}
-                className={`px-3 py-1 rounded-[4px] text-xs font-medium transition ${
-                  isSel 
-                    ? 'bg-white dark:bg-[#18181b] text-zinc-900 dark:text-white border border-zinc-200 dark:border-zinc-700/50 shadow-sm' 
-                    : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'
-                }`}
-              >
-                {platform}
-              </button>
-            );
-          })}
+        {/* Segmented Platform Tabs & Reset Button */}
+        <div className="flex items-center gap-3">
+          <div className="flex bg-zinc-100 dark:bg-[#0d0d11] border border-zinc-200 dark:border-zinc-800/50 p-0.5 rounded-md transition-colors duration-250">
+            {(['LinkedIn', 'Instagram', 'X'] as const).map((platform) => {
+              const isSel = selectedPlatform === platform;
+              return (
+                <button
+                  key={platform}
+                  onClick={() => onPlatformChange(platform)}
+                  className={`px-3 py-1 rounded-[4px] text-xs font-medium transition ${
+                    isSel 
+                      ? 'bg-white dark:bg-[#18181b] text-zinc-900 dark:text-white border border-zinc-200 dark:border-zinc-700/50 shadow-sm' 
+                      : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'
+                  }`}
+                >
+                  {platform}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Reset position button */}
+          {(position.x !== 0 || position.y !== 0 || width !== 480) && (
+            <button
+              onClick={() => {
+                setPosition({ x: 0, y: 0 });
+                setWidth(480);
+              }}
+              className="px-2.5 py-1 rounded border border-zinc-200 dark:border-zinc-800/50 text-[10px] font-mono text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-250 transition bg-white dark:bg-zinc-900 shadow-sm"
+              title="Reset position and size"
+            >
+              Reset Canvas
+            </button>
+          )}
         </div>
 
         {/* Action Button */}
@@ -154,7 +232,59 @@ export default function CenterColumn({
         ) : (
           
           /* 2. Review & Refine Active Simulator View */
-          <div className="w-full max-w-[560px] animate-fade-in">
+          <div 
+            style={{
+              transform: `translate(${position.x}px, ${position.y}px)`,
+              width: `${width}px`,
+              touchAction: 'none'
+            }}
+            className="relative select-none animate-fade-in group/card bg-transparent"
+          >
+            {/* Outline overlay */}
+            <div className="absolute -inset-1.5 border border-transparent group-hover/card:border-zinc-350/50 dark:group-hover/card:border-zinc-700/30 rounded-xl pointer-events-none transition-colors duration-250" />
+            
+            {/* Corner Resize Handles */}
+            <div 
+              onPointerDown={(e) => startResize(e, 'tl')}
+              onPointerMove={onResizeMove}
+              onPointerUp={onResizeEnd}
+              className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-zinc-300 dark:bg-zinc-755 hover:bg-zinc-650 dark:hover:bg-white border border-white dark:border-zinc-900 rounded-full cursor-nwse-resize z-30 opacity-0 group-hover/card:opacity-100 transition-opacity duration-200" 
+              title="Resize Width"
+            />
+            <div 
+              onPointerDown={(e) => startResize(e, 'tr')}
+              onPointerMove={onResizeMove}
+              onPointerUp={onResizeEnd}
+              className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-zinc-300 dark:bg-zinc-755 hover:bg-zinc-650 dark:hover:bg-white border border-white dark:border-zinc-900 rounded-full cursor-nesw-resize z-30 opacity-0 group-hover/card:opacity-100 transition-opacity duration-200" 
+              title="Resize Width"
+            />
+            <div 
+              onPointerDown={(e) => startResize(e, 'bl')}
+              onPointerMove={onResizeMove}
+              onPointerUp={onResizeEnd}
+              className="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-zinc-300 dark:bg-zinc-755 hover:bg-zinc-650 dark:hover:bg-white border border-white dark:border-zinc-900 rounded-full cursor-nesw-resize z-30 opacity-0 group-hover/card:opacity-100 transition-opacity duration-200" 
+              title="Resize Width"
+            />
+            <div 
+              onPointerDown={(e) => startResize(e, 'br')}
+              onPointerMove={onResizeMove}
+              onPointerUp={onResizeEnd}
+              className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-zinc-300 dark:bg-zinc-755 hover:bg-zinc-650 dark:hover:bg-white border border-white dark:border-zinc-900 rounded-full cursor-nwse-resize z-30 opacity-0 group-hover/card:opacity-100 transition-opacity duration-200" 
+              title="Resize Width"
+            />
+
+            {/* Drag Handle Banner */}
+            <div 
+              onPointerDown={startDrag}
+              onPointerMove={onDragMove}
+              onPointerUp={onDragEnd}
+              className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-850 px-2 py-0.5 rounded text-[9px] font-mono font-medium text-zinc-450 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300 cursor-grab active:cursor-grabbing z-20 flex items-center gap-1 shadow-sm opacity-0 group-hover/card:opacity-100 transition-opacity duration-200 select-none"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+              Drag Canvas
+            </div>
             
             {/* PLATFORM FRAME: LINKEDIN */}
             {selectedPlatform === 'LinkedIn' && (

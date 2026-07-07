@@ -221,11 +221,4 @@ export default function SettingsDrawer({ isOpen, onClose, apiKeys, onUpdateKeys 
       </div>
     </div>
   );
-}`}
-          </pre>
-        </div>
-
-      </div>
-    </div>
-  );
 }
