@@ -1,387 +1,165 @@
 {
   "companyName": "Haldiram's",
-  "industry": "Food & Beverage",
+  "industry": "Indian Food Products",
   "businessModel": "Hybrid",
-  "description": "Haldiram's is a renowned Indian food brand specializing in a wide assortment of traditional sweets, savory snacks (namkeen), and ready-to-eat products. They offer direct-to-consumer sales and provide curated gift hampers for personal, wedding, and corporate gifting.",
+  "description": "Haldiram's is a renowned Indian brand offering a diverse selection of traditional sweets, savory snacks (namkeen, bhujia), and curated gift hampers. They operate an e-commerce platform for direct-to-consumer sales with shipping services and cater to both individual and corporate bulk gifting needs.",
   "coreServices": [
-    "Traditional Indian Sweets",
-    "Savory Snacks (Namkeen & Bhujia)",
-    "Ready-to-Eat Products",
-    "Wedding Gifting",
-    "Corporate Gifting",
-    "Curated Gift Hampers",
-    "Culinary Recipes"
+    "Online Retail of Indian Sweets",
+    "Online Retail of Indian Savory Snacks",
+    "Corporate and Festive Gifting Solutions"
   ],
-  "primaryAudience": "Individuals and families seeking traditional Indian sweets and snacks, particularly for personal consumption and gifting on various occasions like weddings and festivals (e.g., Diwali).",
-  "secondaryAudience": "Corporate clients and businesses looking for bulk gifting solutions; food enthusiasts and home cooks interested in innovative recipes using Haldiram's products.",
+  "primaryAudience": "Individuals and families in India who enjoy authentic Indian sweets, namkeen, and snacks for everyday consumption, festivals, and special occasions.",
+  "secondaryAudience": "Corporate clients, individuals, and event planners looking for gifting solutions (wedding, corporate, Diwali) or bulk purchases, as well as food enthusiasts interested in Indian cuisine and recipes.",
   "customerPainPoints": [
-    "Difficulty finding suitable and diverse gift options for different occasions.",
-    "The complexity and logistics involved in bulk gifting for corporate or large personal events.",
-    "Limited availability or inconvenience of purchasing traditional Indian sweets and snacks online from a trusted brand.",
-    "Lack of creative ideas for incorporating traditional snacks into modern recipes."
+    "Difficulty finding a wide variety of authentic Indian sweets and snacks with consistent quality.",
+    "Lack of convenient options for purchasing traditional Indian food items, especially for gifting or bulk orders.",
+    "Concerns about shipping costs for online orders of food products.",
+    "Desire for fresh-keeping packaging for snacks.",
+    "Need for curated gift hampers for various occasions."
   ],
   "businessGoals": [
-    "Increase online sales of Haldiram's diverse product range (sweets, namkeen, snacks).",
-    "Establish Haldiram's as a premier destination for gift hampers, especially for weddings, corporate events, and festivals.",
-    "Simplify and grow the bulk gifting segment for corporate clients.",
-    "Enhance brand engagement and loyalty through content marketing (e.g., recipes blog).",
-    "Improve customer experience through convenient online shopping and attractive offers (like free shipping)."
+    "Increase online sales of Haldiram's diverse product range (sweets, namkeen, snacks, bhujia, soan papdii).",
+    "Promote and sell gift hampers for weddings, corporate events, Diwali, and other gifting occasions.",
+    "Expand market reach for authentic Indian traditional sweets and snacks.",
+    "Encourage bulk gifting and corporate orders through simplified processes.",
+    "Enhance brand engagement and loyalty by providing recipes and usage ideas.",
+    "Highlight convenience of online ordering with benefits like free shipping for orders above ₹500.",
+    "Emphasize the traditional value and quality of products."
   ],
-  "tone": "Warm, Inviting, Appealing",
-  "personality": "Lover",
-  "communicationStyle": "Direct and Descriptive",
-  "emotionalPositioning": "Joy and Connection",
+  "tone": "Warm, Celebratory, Appetizing",
+  "personality": "Caregiver",
+  "communicationStyle": "Explanatory, Descriptive, Engaging",
+  "emotionalPositioning": "Joy, Nostalgia, Celebration",
   "importantKeywords": [
-    "haldiram products",
     "sweets",
     "namkeen",
     "gifting",
     "hampers",
+    "traditional",
     "delight",
-    "impress",
-    "recipes",
     "family",
-    "premium"
+    "celebration"
   ],
   "visualIdentity": {
-    "designStyle": "Premium E-commerce",
-    "visualMood": "Premium, Appetizing, Inviting",
+    "designStyle": "Clean E-commerce",
+    "visualMood": "Premium, Appetizing, Celebratory",
     "imageryStyle": "Realistic Studio",
     "illustrationStyle": "None",
-    "compositionPreferences": "Grid-aligned, Centered",
-    "whitespaceUsage": "Comfortable",
-    "photographyStyle": "Studio Product, Appetizing Food"
+    "compositionPreferences": "Grid-aligned, Structured",
+    "whitespaceUsage": "Spacious",
+    "photographyStyle": "Studio Product"
   },
   "productsAndServices": [
     {
-      "name": "Haldiram's Sweets",
+      "name": "Orange Burfee",
       "type": "Product",
-      "description": "A wide variety of traditional Indian sweet confectionery from Haldiram's.",
+      "description": "Luscious orange-infused milk fudge, a one-of-a-kind Indian mithai that captures the essence of Nagpur's renowned oranges. It blends the creamy richness of traditional burfee with the tangy sweetness of freshly harvested oranges.",
       "keyFeatures": [
-        "Traditional Indian sweets",
-        "Varied selection",
-        "Part of Haldiram's product range"
+        "Made from pure milk, fresh orange pulp, and cardamom",
+        "Soft, melt-in-your-mouth texture",
+        "Vibrant, cheerful hue",
+        "Available in 250 gm and 500 gm packs",
+        "Zesty festive mithai"
       ]
     },
     {
-      "name": "Haldiram's Namkeen",
+      "name": "Besan Ladoo",
       "type": "Product",
-      "description": "A diverse range of savory Indian snacks by Haldiram's.",
+      "description": "A classic Indian sweet made from finely roasted Bengal gram flour (besan) and blended with rich ghee and sugar, encapsulating an art passed through generations.",
       "keyFeatures": [
-        "Savory snacks",
-        "Traditional Indian flavors",
-        "Varied selection"
+        "Made from roasted gram flour (besan) and pure ghee",
+        "Soft yet rich texture that crumbles in your mouth",
+        "Melt-in-mouth festive mithai",
+        "Available in 250 gm and 500 gm packs"
       ]
     },
     {
-      "name": "Haldiram's Bhujia",
+      "name": "Bhujia Sev Jar",
       "type": "Product",
-      "description": "Crispy, thread-like savory snack made from gram flour by Haldiram's.",
+      "description": "The iconic crispy, spiced gram-flour namkeen from Haldiram's, packed in a convenient, fresh-keeping jar.",
       "keyFeatures": [
-        "Crispy",
-        "Traditional Indian snack",
-        "Gram flour based"
+        "Iconic crispy bhujia",
+        "Spiced gram-flour namkeen",
+        "Fresh-keeping 600 gm jar",
+        "Timeless snack"
       ]
     },
     {
-      "name": "Haldiram's Soan Papdi",
+      "name": "Agra Taj Petha",
       "type": "Product",
-      "description": "A popular flaky, melt-in-your-mouth Indian sweet from Haldiram's.",
+      "description": "A sweet product from Haldiram's.",
       "keyFeatures": [
-        "Flaky texture",
-        "Traditional sweet",
-        "Melt-in-mouth"
+        "Available in 200 gm and 350 gm packs"
       ]
     },
     {
-      "name": "Haldiram's Snacks",
+      "name": "Kaju Katli",
       "type": "Product",
-      "description": "A broad category encompassing various ready-to-eat snack items by Haldiram's.",
-      "keyFeatures": [
-        "Ready-to-eat",
-        "Wide variety",
-        "Popular Indian snacks"
-      ]
+      "description": "A sweet product from Haldiram's.",
+      "keyFeatures": []
     },
     {
-      "name": "Premium Sweets Collection",
+      "name": "Fancy Dry Fruits Box (CC)",
       "type": "Product",
-      "description": "A selection of high-quality, premium Indian sweets for discerning tastes.",
+      "description": "A curated hamper featuring a selection of dry fruits.",
       "keyFeatures": [
-        "High quality",
-        "Premium ingredients",
-        "Curated selection"
-      ]
-    },
-    {
-      "name": "Wedding Hampers",
-      "type": "Product",
-      "description": "Specially curated gift hampers designed for wedding occasions.",
-      "keyFeatures": [
-        "Gifting solution",
-        "Wedding themed",
-        "Curated selection"
-      ]
-    },
-    {
-      "name": "Corporate Gifting Hampers",
-      "type": "Product",
-      "description": "Custom and pre-designed gifting solutions for corporate clients and events.",
-      "keyFeatures": [
-        "Bulk gifting options",
-        "Suitable for corporate events",
-        "Customizable options"
-      ]
-    },
-    {
-      "name": "Diwali Gifting Hampers",
-      "type": "Product",
-      "description": "Festive gift hampers and products specifically for Diwali celebrations.",
-      "keyFeatures": [
-        "Festive",
-        "Seasonal",
-        "Gifting solution"
-      ]
-    },
-    {
-      "name": "Best Selling Hampers",
-      "type": "Product",
-      "description": "A collection of Haldiram's most popular and highly-rated gift hampers.",
-      "keyFeatures": [
-        "Popular products",
-        "Customer favorites",
-        "Curated selection"
-      ]
-    },
-    {
-      "name": "Best Selling Products",
-      "type": "Product",
-      "description": "A selection of Haldiram's individual top-selling food products.",
-      "keyFeatures": [
-        "Popular products",
-        "Top-rated",
-        "Individual items"
-      ]
-    },
-    {
-      "name": "Curated Hampers",
-      "type": "Product",
-      "description": "Handpicked selection of Haldiram's products presented in a gift hamper.",
-      "keyFeatures": [
-        "Handpicked assortment",
-        "Varied products",
-        "Gifting option"
-      ]
-    },
-    {
-      "name": "Fancy Dry fruits Box (CC)",
-      "type": "Product",
-      "description": "A curated box containing 1.1 kg of assorted fancy dry fruits, suitable for gifting.",
-      "keyFeatures": [
-        "1.1 kg weight",
-        "Assorted dry fruits",
-        "Premium packaging",
-        "Gifting option"
+        "Curated hamper",
+        "Contains dry fruits",
+        "Available in 1.1 kg pack"
       ]
     },
     {
       "name": "Fancy Dry Fruits Tokni (H1)",
       "type": "Product",
-      "description": "A traditional 'tokni' (basket) filled with 860 gm of fancy dry fruits, ideal for gifts.",
+      "description": "A curated hamper featuring a selection of dry fruits, presented in a traditional Tokni (basket/container).",
       "keyFeatures": [
-        "860 gm weight",
-        "Assorted dry fruits",
-        "Traditional packaging",
-        "Gifting option"
+        "Curated hamper",
+        "Contains dry fruits",
+        "Available in 860 gm pack"
       ]
     },
     {
       "name": "Joyful Gift Hamper",
       "type": "Product",
-      "description": "A delightful gift hamper weighing 1053 gm, offering a selection of Haldiram's treats.",
+      "description": "A curated gift hamper designed to bring joy.",
       "keyFeatures": [
-        "1053 gm weight",
-        "Varied contents",
-        "Curated selection",
-        "Gifting"
+        "Curated hamper",
+        "Available in 1053 gm pack"
       ]
     },
     {
       "name": "Sunshine Gift Basket",
       "type": "Product",
-      "description": "A bright and appealing gift basket containing 1.22 kg of Haldiram's products.",
+      "description": "A curated gift basket, offering a delightful selection of Haldiram's products.",
       "keyFeatures": [
-        "1.22 kg weight",
-        "Assorted products",
-        "Gift basket",
-        "Vibrant presentation"
+        "Curated hamper",
+        "Available in 1.22 kg pack"
       ]
     },
     {
-      "name": "Blossom Gift Basket",
-      "type": "Product",
-      "description": "A substantial gift basket weighing 1.7 kg, ideal for corporate or large-scale gifting.",
-      "keyFeatures": [
-        "1.7 kg weight",
-        "Suitable for corporate gifting",
-        "Assorted items",
-        "Premium presentation"
-      ]
-    },
-    {
-      "name": "Classic Relish Dry Fruit Box",
-      "type": "Product",
-      "description": "A sophisticated box containing 500 gm of classic dry fruits, often chosen for corporate gifting.",
-      "keyFeatures": [
-        "500 gm weight",
-        "Classic dry fruits",
-        "Corporate gifting",
-        "Elegant packaging"
-      ]
-    },
-    {
-      "name": "Fancy Dry Fruit Gift Box (SS)",
-      "type": "Product",
-      "description": "A gift box containing 320 gm of fancy dry fruits.",
-      "keyFeatures": [
-        "320 gm weight",
-        "Fancy dry fruits",
-        "Gifting option"
-      ]
-    },
-    {
-      "name": "Fancy Dry Fruit Gift Box (WW)",
-      "type": "Product",
-      "description": "A gift box containing 200 gm of fancy dry fruits.",
-      "keyFeatures": [
-        "200 gm weight",
-        "Fancy dry fruits",
-        "Gifting option"
-      ]
-    },
-    {
-      "name": "Fancy Dry Fruits Tokni (A1)",
-      "type": "Product",
-      "description": "A decorative tokni with 220 gm of fancy dry fruits, perfect for smaller gifts.",
-      "keyFeatures": [
-        "220 gm weight",
-        "Fancy dry fruits",
-        "Decorative tokni",
-        "Gifting option"
-      ]
-    },
-    {
-      "name": "Fancy Dry Fruits Tokni (B1)",
-      "type": "Product",
-      "description": "A decorative tokni with 280 gm of fancy dry fruits, suitable for gifting.",
-      "keyFeatures": [
-        "280 gm weight",
-        "Fancy dry fruits",
-        "Decorative tokni",
-        "Gifting option"
-      ]
-    },
-    {
-      "name": "Fancy Dry Fruits Tokni (C1)",
-      "type": "Product",
-      "description": "A decorative tokni featuring fancy dry fruits, ideal for various gifting occasions.",
-      "keyFeatures": [
-        "Fancy dry fruits",
-        "Decorative tokni",
-        "Versatile gifting"
-      ]
-    },
-    {
-      "name": "Happiness Gift Hamper",
-      "type": "Product",
-      "description": "A large gift hamper weighing 2544 gm, filled with Haldiram's products to spread joy.",
-      "keyFeatures": [
-        "2544 gm weight",
-        "Diverse product mix",
-        "Substantial gifting",
-        "Curated for happiness"
-      ]
-    },
-    {
-      "name": "Indulgence Gift Hamper",
-      "type": "Product",
-      "description": "A premium gift hamper weighing 1.4 kg, designed for a luxurious experience.",
-      "keyFeatures": [
-        "1.4 kg weight",
-        "Premium selection",
-        "Indulgent treats",
-        "Gifting option"
-      ]
-    },
-    {
-      "name": "Turkish Delight (Select Delight)",
-      "type": "Product",
-      "description": "A 540 gm pack of Haldiram's 'Select Delight' Turkish Delight.",
-      "keyFeatures": [
-        "540 gm weight",
-        "Turkish Delight",
-        "Sweet confection",
-        "Select Delight variant"
-      ]
-    },
-    {
-      "name": "Victory Gift Hamper",
-      "type": "Product",
-      "description": "A celebratory gift hamper weighing 1.9 kg, perfect for acknowledging achievements.",
-      "keyFeatures": [
-        "1.9 kg weight",
-        "Celebratory theme",
-        "Varied contents",
-        "Gifting option"
-      ]
-    },
-    {
-      "name": "Imperial Gift Hamper",
-      "type": "Product",
-      "description": "An exquisite gift hamper weighing 755 gm, offering a regal selection of products.",
-      "keyFeatures": [
-        "755 gm weight",
-        "Exquisite selection",
-        "Premium gifting",
-        "Regal theme"
-      ]
-    },
-    {
-      "name": "FESTIVE MIX TART",
-      "type": "Product",
-      "description": "A festive assortment of mixed tarts, likely a sweet baked item for celebrations.",
-      "keyFeatures": [
-        "Festive item",
-        "Mixed assortment",
-        "Baked treat",
-        "Gifting option"
-      ]
-    },
-    {
-      "name": "Free Shipping",
+      "name": "Haldiram's Recipes Blog",
       "type": "Service",
-      "description": "Shipping service offered free of charge on orders above a specified amount.",
+      "description": "A blog offering a daily dose of food, family, and fun, featuring authentic Indian sweet and snack recipes.",
       "keyFeatures": [
-        "Cost-saving for customers",
-        "Applicable on orders above ₹500/-",
-        "Delivery service"
+        "Authentic Indian sweet recipes",
+        "Authentic Indian snack recipes",
+        "Includes recipes like Petha Tea Cake, Soan Papdi Tiramisu, Soya Stick Aloo Tikki, Orange Burfee Puran Poli, Tangy Pita Pockets, Papad Nachos, Gulab Jamun Cheesecake"
       ]
     }
   ],
   "imageGenerationRecommendations": {
-    "recommendedVisualStyle": "High-resolution studio photography, elegant lifestyle imagery, clean product shots with subtle Indian traditional motifs, contemporary presentation with a touch of rooted warmth.",
+    "recommendedVisualStyle": "Elevated Product Photography with a Modern, Warm Aesthetic",
     "preferredLayouts": [
-      "Product Spotlight (single item or small cluster)",
-      "Curated Flat Lay (artfully arranged sweets/snacks with elegant props)",
-      "Warm Lifestyle Scene (people enjoying products in home/celebration settings)",
-      "Elegant Gift Hamper Showcase (beautifully displayed gift boxes)",
-      "Editorial Spread (broader scene featuring a selection of products)"
+      "Hero shot with ample negative space",
+      "Styled flat lay showcasing variety and texture",
+      "Curated group arrangements for gift hampers and collections",
+      "Subtle lifestyle scenes (e.g., sharing, gifting) with soft focus"
     ],
-    "lighting": "Soft, diffused natural light; warm golden hour glow; studio lighting with gentle highlights; creating depth and an inviting, appetizing appeal. Avoid harsh shadows.",
-    "composition": "Rule of thirds, leading lines guiding the eye to the product, balanced symmetry for hampers, shallow depth of field to emphasize products, close-ups revealing textures and details. Compositions should feel generous and abundant.",
-    "backgroundRecommendations": "Clean and minimal (soft pastel gradients, subtle cream/beige textures, light wood surfaces); culturally elegant (traditional Indian fabrics like silk/brocade in muted tones, marble, brass elements, subtle floral accents); lifestyle context (cozy home settings, festive decorations, elegant dining tables).",
-    "logoPlacementRecommendations": "Subtle and elegant; top-right/left or bottom-right/left corner; as a tasteful watermark; integrated gracefully into product packaging when visible. Always clear, legible, and non-obstructive to the product.",
-    "typographyRecommendations": "A harmonious blend of elegant serif fonts (for headlines and a touch of heritage) and clean, highly legible sans-serif fonts (for body text and product descriptions). Colors should be rich golds, deep maroons, warm browns, or subtle off-whites to complement the brand's aesthetic.",
-    "negativePromptRecommendations": "Cluttered background, harsh/artificial/fluorescent lighting, low resolution, blurry, unappetizing textures, overly saturated/unnatural colors, empty space, poor quality, bad composition, cheap look, plastic-like appearance, cartoonish, bland."
+    "lighting": "Soft, diffused natural light or warm studio lighting, creating gentle highlights and inviting shadows that emphasize texture and freshness.",
+    "composition": "Balanced and appealing compositions, often employing the rule of thirds or golden ratio, with a clear focus on product details, vibrant colors, and inviting textures. Strategic use of negative space to enhance product prominence.",
+    "backgroundRecommendations": "Clean, simple backgrounds such as soft pastels, warm muted tones (cream, beige, light wood), elegant marble or stone textures. Minimal, tasteful props that enhance the celebratory or traditional feel without cluttering the scene.",
+    "logoPlacementRecommendations": "Subtle and consistent placement, typically in a bottom corner (e.g., bottom right/left) or unobtrusively integrated into product packaging within the scene. Should not overshadow the main product.",
+    "typographyRecommendations": "Elegant and highly legible sans-serif fonts for a clean e-commerce look, complemented by a sophisticated serif or a refined, gentle script font to convey warmth and celebration. Focus on readability and harmonious pairing.",
+    "negativePromptRecommendations": "Avoid blurry images, harsh or cold lighting, busy or cluttered backgrounds, artificial-looking food, cheap or unappetizing props, generic stock photography aesthetics, dull colors, or anything that detracts from a premium and authentic feel."
   }
 }
