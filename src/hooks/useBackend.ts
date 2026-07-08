@@ -469,25 +469,25 @@ export function useBackend() {
       const mappedBrandKit: BrandKit = {
         domain: domainStr,
         colors: ['#2563eb', '#1e293b', '#10b981', '#ffffff'],
-        logoUrl: summary.companyName.toUpperCase(),
-        fontConfig: 'Inter (Grotesque Sans)',
+        logoUrl: summary.logo?.primary || summary.companyName.toUpperCase(),
+        fontConfig: summary.brandKnowledge?.visualIdentity?.typographyRecommendations || 'Inter (Grotesque Sans)',
         companyName: summary.companyName,
-        industry: 'Crawl Ingested Tech',
-        targetAudience: mainPage.metaDescription || 'Indexed target profile from crawling homepage.',
-        brandPersonality: 'Technical, Modern, Information-Rich',
-        brandVoice: 'Corporate, Clear, Analytical',
-        brandTone: 'Professional',
+        industry: summary.brandKnowledge?.industry || 'Crawl Ingested Tech',
+        targetAudience: summary.brandKnowledge?.primaryAudience || mainPage.metaDescription || 'Indexed target profile from crawling homepage.',
+        brandPersonality: summary.brandKnowledge?.personality || 'Technical, Modern, Information-Rich',
+        brandVoice: summary.brandKnowledge?.communicationStyle || 'Corporate, Clear, Analytical',
+        brandTone: summary.brandKnowledge?.tone || 'Professional',
         confidenceScore: 98,
         assets: {
-          logo: '/favicon.svg',
-          hero: mainPage.images[0] || '/brand_asset_1.png',
+          logo: summary.logo?.primary || '/favicon.svg',
+          hero: summary.homepageImages[0] || '/brand_asset_1.png',
           product: [
-            summary.pages[1]?.images[0] || '/brand_asset_2.png',
-            summary.pages[2]?.images[0] || '/brand_asset_3.png'
+            summary.homepageImages[1] || '/brand_asset_2.png',
+            summary.homepageImages[2] || '/brand_asset_3.png'
           ],
-          dashboard: mainPage.images[1] || '/brand_asset_1.png',
-          team: summary.pages[1]?.images[1] || '/brand_asset_2.png',
-          illustration: summary.pages[2]?.images[1] || '/brand_asset_3.png'
+          dashboard: summary.homepageImages[3] || '/brand_asset_1.png',
+          team: summary.homepageImages[4] || '/brand_asset_2.png',
+          illustration: summary.homepageImages[5] || '/brand_asset_3.png'
         },
         detectionConfidences: {
           logo: 99,

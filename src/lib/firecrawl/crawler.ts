@@ -1,8 +1,12 @@
+import fs from 'fs';
+import path from 'path';
 import { firecrawlClient } from './client.js';
 import { parseHtmlPage } from './parser.js';
 import { Logger } from './logger.js';
 import { filterAssets } from './asset-filter.js';
+import { analyzeBrandKnowledge } from '../brand/analyzer.js';
 import type { ParsedPage } from './parser.js';
+import type { BrandKnowledge } from '../brand/analyzer.js';
 
 export interface CrawlSummary {
   companyName: string;
@@ -19,6 +23,7 @@ export interface CrawlSummary {
   homepageImages: string[];
   totalFilteredImages: number;
   discardedImages: number;
+  brandKnowledge?: BrandKnowledge;
 }
 
 function getPageScore(urlStr: string): number {
@@ -160,6 +165,69 @@ export async function getWebsiteCrawlStatus(
 
     const filtered = filterAssets(selectedPages, homepage);
 
+    let brandKnowledge: BrandKnowledge | undefined = undefined;
+    try {
+      if (process.env.GEMINI_API_KEY && !process.env.GEMINI_API_KEY.includes('YOUR_API_KEY')) {
+        brandKnowledge = await analyzeBrandKnowledge(selectedPages, {});
+        
+        // Save separately
+        const outputDir = path.join(process.cwd(), 'brand-knowledge');
+        if (!fs.existsSync(outputDir)) {
+          fs.mkdirSync(outputDir, { recursive: true });
+        }
+        const filename = path.join(outputDir, `${companyName.toLowerCase()}-brand-knowledge.json`);
+        fs.writeFileSync(filename, JSON.stringify(brandKnowledge, null, 2), 'utf8');
+        Logger.success(`Saved Brand Knowledge JSON file to: ${filename}`);
+      } else {
+        Logger.warn('GEMINI_API_KEY not defined in .env.local. Initializing mock fallback Brand Knowledge profiles.');
+        brandKnowledge = {
+          companyName,
+          industry: 'Technology Sector',
+          businessModel: 'SaaS',
+          description: 'A modern technology platform extracted from website crawl data.',
+          coreServices: ['Software Development', 'Product Solutions'],
+          primaryAudience: 'Enterprise clients and technology teams',
+          secondaryAudience: 'Developers and product designers',
+          customerPainPoints: ['Slow development speed', 'High visual composition complexity'],
+          businessGoals: ['Accelerate product launches', 'Standardize brand consistency'],
+          tone: 'Professional and technical',
+          personality: 'Innovator',
+          communicationStyle: 'Direct and informative',
+          emotionalPositioning: 'Empowering engineering efficiency',
+          importantKeywords: [companyName.toLowerCase(), 'software', 'platform'],
+          visualIdentity: {
+            designStyle: 'Minimalist SaaS',
+            visualMood: 'Premium and clean',
+            imageryStyle: 'Abstract Tech Vectors',
+            illustrationStyle: 'Flat Vector',
+            compositionPreferences: 'Grid-aligned',
+            whitespaceUsage: 'Spacious',
+            photographyStyle: 'Warm Editorial'
+          },
+          productsAndServices: [
+            {
+              name: 'Core Application Platform',
+              type: 'Product',
+              description: 'Primary platform suite interface.',
+              keyFeatures: ['Intuitive workspace', 'Extensive visual templates']
+            }
+          ],
+          imageGenerationRecommendations: {
+            recommendedVisualStyle: 'Flat Minimalist SaaS',
+            preferredLayouts: ['Centered card layout', 'Split screen mockups'],
+            lighting: 'Studio soft light',
+            composition: 'Centered visual with generous white space padding margins',
+            backgroundRecommendations: 'Light neutral background with soft gradient accents',
+            logoPlacementRecommendations: 'Top-left brand icon alignment',
+            typographyRecommendations: 'Sans-serif typography headers',
+            negativePromptRecommendations: 'low resolution, cluttered, generic, saturated colors'
+          }
+        };
+      }
+    } catch (err: any) {
+      Logger.error('Brand Knowledge Engine pipeline execution failed', err);
+    }
+
     const results: CrawlSummary = {
       companyName,
       homepage,
@@ -171,7 +239,8 @@ export async function getWebsiteCrawlStatus(
       logo: filtered.logo,
       homepageImages: filtered.homepageImages,
       totalFilteredImages: filtered.totalFilteredImages,
-      discardedImages: filtered.discardedImages
+      discardedImages: filtered.discardedImages,
+      brandKnowledge
     };
 
     Logger.success(`=== CRAWL SUCCESSFUL ===`);
