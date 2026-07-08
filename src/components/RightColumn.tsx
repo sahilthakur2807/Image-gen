@@ -294,7 +294,7 @@ export default function RightColumn({
                     { label: 'Logo Detection', val: brandKit.detectionConfidences.logo },
                     { label: 'Typography Detection', val: brandKit.detectionConfidences.typography },
                     { label: 'Color Extraction', val: brandKit.detectionConfidences.colors },
-                    { label: 'Brand Style Ingestion', val: brandKit.detectionConfidences.brandStyle },
+                    { label: 'Brand Style Extraction', val: brandKit.detectionConfidences.brandStyle },
                     { label: 'Image Classification', val: brandKit.detectionConfidences.imageClassification }
                   ].map(bar => (
                     <div key={bar.label} className="space-y-1.5">
@@ -385,8 +385,8 @@ export default function RightColumn({
                       <div className="pt-3 border-t border-zinc-100 dark:border-zinc-900">
                         <p className="text-[8px] font-bold text-zinc-400 dark:text-zinc-550 uppercase tracking-wide pb-1.5">Generated Image Prompt (JSON)</p>
                         <div className="relative group">
-                          <pre className="p-3 border border-zinc-200 dark:border-zinc-800 rounded-xl bg-zinc-50 dark:bg-[#0d0d11] text-[9.5px] font-mono text-zinc-700 dark:text-zinc-300 overflow-x-auto whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto">
-                            {JSON.stringify({ prompt: creativeBrief.imagePrompt || '' }, null, 2)}
+                          <pre className="p-3 border border-zinc-200 dark:border-zinc-800 rounded-xl bg-zinc-50 dark:bg-[#0d0d11] text-[9.5px] font-mono text-zinc-700 dark:text-zinc-300 overflow-x-auto whitespace-pre-wrap leading-relaxed max-h-60 overflow-y-auto select-all">
+                            {JSON.stringify(creativeBrief.imagePromptPackage || { prompt: creativeBrief.imagePrompt || '' }, null, 2)}
                           </pre>
                         </div>
                       </div>
@@ -484,7 +484,7 @@ export default function RightColumn({
               </div>
               <div className="p-2.5 rounded-xl text-xs bg-white dark:bg-[#0d0d11] border border-zinc-200 dark:border-zinc-800 text-zinc-500 flex items-center gap-2 transition-colors duration-250 shadow-sm">
                 <div className="h-3 w-3 rounded-full border border-zinc-400 dark:border-zinc-500 border-t-transparent animate-spin" />
-                Refining brand canvas on n8n...
+                 Refining brand canvas using Gemini Flash Lite...
               </div>
             </div>
           )}

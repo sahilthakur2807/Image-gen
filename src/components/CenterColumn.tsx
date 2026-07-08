@@ -1,6 +1,9 @@
 import { useState, useRef } from 'react';
 import type { PointerEvent } from 'react';
-import type { PostItem, BrandKit, ExtractionStatus, DesignTokens } from '../hooks/useBackend';
+import type { PostItem, BrandKit, ExtractionStatus, DesignTokens, ApiKeys, PipelineStatusStep } from '../hooks/useBackend';
+import ImageGenModal from './ImageGenModal';
+import PromptDetailsModal from './PromptDetailsModal';
+import JsonPromptViewer from './JsonPromptViewer';
 
 interface CenterColumnProps {
   extractionStatus: ExtractionStatus;
@@ -12,6 +15,12 @@ interface CenterColumnProps {
   onPublish: (postId: string) => void;
   designTokens: DesignTokens;
   processingTime: number;
+  isGeneratingImage: boolean;
+  isImageGenModalOpen: boolean;
+  setIsImageGenModalOpen: (open: boolean) => void;
+  onGenerateImage: (provider: 'gemini' | 'openai' | 'mock', settings: any) => void;
+  apiKeys: ApiKeys;
+  pipelineSteps: PipelineStatusStep[];
 }
 
 const ACTIVITY_STEPS = [
@@ -36,10 +45,18 @@ export default function CenterColumn({
   onPlatformChange,
   onPublish,
   designTokens,
-  processingTime
+  processingTime,
+  isGeneratingImage,
+  isImageGenModalOpen,
+  setIsImageGenModalOpen,
+  onGenerateImage,
+  apiKeys,
+  pipelineSteps
 }: CenterColumnProps) {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [width, setWidth] = useState(480);
+  const [isPromptDetailsOpen, setIsPromptDetailsOpen] = useState(false);
+  const [isJsonViewerOpen, setIsJsonViewerOpen] = useState(false);
 
   const dragStart = useRef({ x: 0, y: 0 });
   const posStart = useRef({ x: 0, y: 0 });
@@ -94,6 +111,96 @@ export default function CenterColumn({
   const onResizeEnd = (e: PointerEvent<HTMLDivElement>) => {
     activeResizeHandle.current = null;
     e.currentTarget.releasePointerCapture(e.pointerId);
+  };
+
+  const handleDownloadImage = async (url: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `${brandKit?.companyName || 'brand'}-artwork.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (e) {
+      window.open(url, '_blank');
+    }
+  };
+
+  const renderProgressOverlay = () => {
+    if (!isGeneratingImage) return null;
+
+    const getStepStatus = (stages: number[]) => {
+      const matchSteps = pipelineSteps.filter(s => stages.includes(s.stage));
+      if (matchSteps.some(s => s.status === 'FAILED')) return 'FAILED';
+      if (matchSteps.some(s => s.status === 'RUNNING')) return 'RUNNING';
+      if (matchSteps.every(s => s.status === 'SUCCESS')) return 'SUCCESS';
+      return 'PENDING';
+    };
+
+    const checklist = [
+      { label: 'Website Crawled', status: getStepStatus([1, 2]) },
+      { label: 'Assets Extracted', status: getStepStatus([3, 4]) },
+      { label: 'Brand Knowledge Ready', status: getStepStatus([5]) },
+      { label: 'Creative Brief Ready', status: getStepStatus([6]) },
+      { label: 'Prompt Generated', status: getStepStatus([7]) },
+      { label: 'Generating Image', status: getStepStatus([8]) },
+      { label: 'Saving Results', status: getStepStatus([9]) }
+    ];
+
+    const activeStep = pipelineSteps.find(s => s.status === 'RUNNING');
+    const statusMsg = activeStep ? activeStep.message || `Running ${activeStep.name}...` : 'Running pipeline orchestrator...';
+
+    return (
+      <div className="absolute inset-0 bg-black/90 backdrop-blur-md z-30 flex flex-col items-center justify-center p-5 space-y-4 animate-fade-in text-white select-none">
+        <div className="relative h-11 w-11 flex items-center justify-center">
+          <div className="absolute inset-0 rounded-full border-4 border-white/20 border-t-[#3b9ffd] animate-spin" />
+          <span className="text-[10px] font-bold font-mono text-zinc-300">PIPELINE</span>
+        </div>
+        <div className="text-center max-w-[280px]">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-[#3b9ffd]">AI Pipeline Orchestration</h4>
+          <p className="text-[10px] text-zinc-400 truncate mt-0.5">{statusMsg}</p>
+        </div>
+        
+        <div className="w-full max-w-[220px] pt-3 border-t border-white/10 space-y-2 text-[10.5px] font-mono">
+          {checklist.map((item) => {
+            const isDone = item.status === 'SUCCESS';
+            const isCurrent = item.status === 'RUNNING';
+            const isFailed = item.status === 'FAILED';
+            
+            return (
+              <div key={item.label} className="flex items-center justify-between">
+                <span className={
+                  isDone 
+                    ? 'text-zinc-500 line-through opacity-70' 
+                    : isCurrent 
+                    ? 'text-[#3b9ffd] font-bold animate-pulse' 
+                    : isFailed 
+                    ? 'text-red-400 font-semibold' 
+                    : 'text-zinc-400'
+                }>
+                  {item.label}
+                </span>
+                <span className="font-bold">
+                  {isDone ? (
+                    <span className="text-emerald-400">✔</span>
+                  ) : isCurrent ? (
+                    <span className="text-[#3b9ffd] animate-ping">●</span>
+                  ) : isFailed ? (
+                    <span className="text-red-500">❌</span>
+                  ) : (
+                    <span className="text-zinc-700">○</span>
+                  )}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
   };
 
   const getInitials = (domain?: string) => {
@@ -153,26 +260,61 @@ export default function CenterColumn({
 
         {/* Action Button */}
         {activePost && (
-          <button
-            onClick={() => onPublish(activePost.id)}
-            disabled={activePost.status === 'Published' || isLoading}
-            className={`text-xs font-semibold px-4 py-1.5 rounded-md border transition flex items-center gap-1.5 cursor-pointer ${
-              activePost.status === 'Published'
-                ? 'bg-transparent border-zinc-200 dark:border-zinc-800/50 text-zinc-400 dark:text-zinc-600 cursor-not-allowed'
-                : 'bg-zinc-900 text-white hover:bg-zinc-800 border-zinc-900 dark:bg-white dark:hover:bg-zinc-200 dark:border-white dark:text-black shadow-sm'
-            }`}
-          >
-            {activePost.status === 'Published' ? (
-              <>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                </svg>
-                Published
-              </>
-            ) : (
-              'Approve & Publish'
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsImageGenModalOpen(true)}
+              disabled={isLoading || isGeneratingImage}
+              className={`text-xs font-semibold px-3 py-1.5 rounded-md border transition flex items-center gap-1.5 cursor-pointer ${
+                isGeneratingImage
+                  ? 'bg-zinc-100 dark:bg-zinc-900 text-zinc-400 dark:text-zinc-650 border-zinc-200 dark:border-zinc-800 cursor-not-allowed animate-pulse'
+                  : 'bg-white hover:bg-zinc-50 border-zinc-200 text-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-850 dark:border-zinc-800 dark:text-zinc-200 shadow-xs'
+              }`}
+            >
+              {isGeneratingImage ? (
+                <>
+                  <div className="h-3 w-3 rounded-full border border-zinc-400 dark:border-zinc-500 border-t-transparent animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  Generate AI Image
+                </>
+              )}
+            </button>
+            <button
+              onClick={() => onPublish(activePost.id)}
+              disabled={activePost.status === 'Published' || isLoading}
+              className={`text-xs font-semibold px-4 py-1.5 rounded-md border transition flex items-center gap-1.5 cursor-pointer ${
+                activePost.status === 'Published'
+                  ? 'bg-transparent border-zinc-200 dark:border-zinc-800/50 text-zinc-450 dark:text-zinc-600 cursor-not-allowed'
+                  : 'bg-zinc-900 text-white hover:bg-zinc-800 border-zinc-900 dark:bg-white dark:hover:bg-zinc-200 dark:border-white dark:text-black shadow-sm'
+              }`}
+            >
+              {activePost.status === 'Published' ? (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Published
+                </>
+              ) : (
+                'Approve & Publish'
+              )}
+            </button>
+
+            {activePost.imageMetadata && (
+              <button
+                type="button"
+                onClick={() => setIsJsonViewerOpen(true)}
+                className="text-xs font-semibold px-3 py-1.5 rounded-md border border-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-850 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 shadow-xs flex items-center gap-1.5 cursor-pointer"
+              >
+                <span>&lt;/&gt; Prompt</span>
+              </button>
             )}
-          </button>
+          </div>
         )}
       </div>
 
@@ -186,7 +328,7 @@ export default function CenterColumn({
               <div className="flex items-center gap-3">
                 <div className="h-2.5 w-2.5 rounded-full bg-amber-500 animate-ping" />
                 <h3 className="text-xs font-semibold text-zinc-800 dark:text-white tracking-wider uppercase font-mono">
-                  Ingestion Checklist Active
+                  Brand Checklist Active
                 </h3>
               </div>
               <span className="text-[10px] font-mono text-zinc-500">
@@ -395,6 +537,25 @@ export default function CenterColumn({
                       className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
                       style={{ aspectRatio: '16/9' }}
                     />
+                    {renderProgressOverlay()}
+                    
+                    {/* Hover Overlay Button */}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-250 flex items-center justify-center">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsImageGenModalOpen(true);
+                        }}
+                        disabled={isGeneratingImage}
+                        className="px-4 py-2 bg-white hover:bg-zinc-100 text-zinc-900 rounded-xl text-xs font-semibold shadow-lg flex items-center gap-1.5 transition duration-205 scale-95 hover:scale-100 cursor-pointer"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        Regenerate Image with AI
+                      </button>
+                    </div>
 
                     {/* BRANDING OVERLAY INJECTED ELEMENT */}
                     <div className="absolute bottom-3 left-3 bg-white/95 dark:bg-[#09090b]/90 backdrop-blur-md border border-zinc-250 dark:border-zinc-800 rounded-lg px-2.5 py-1.5 flex items-center gap-2 shadow-lg transition-colors duration-250">
@@ -471,6 +632,25 @@ export default function CenterColumn({
                       alt="Instagram Layer" 
                       className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
                     />
+                    {renderProgressOverlay()}
+
+                    {/* Hover Overlay Button */}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-250 flex items-center justify-center">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsImageGenModalOpen(true);
+                        }}
+                        disabled={isGeneratingImage}
+                        className="px-4 py-2 bg-white hover:bg-zinc-100 text-zinc-900 rounded-xl text-xs font-semibold shadow-lg flex items-center gap-1.5 transition duration-205 scale-95 hover:scale-100 cursor-pointer"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        Regenerate Image with AI
+                      </button>
+                    </div>
 
                     {/* BRANDING OVERLAY INJECTED ELEMENT */}
                     <div className="absolute top-3 right-3 bg-white/95 dark:bg-black/80 backdrop-blur-md border border-zinc-200 dark:border-zinc-800/40 rounded-full px-3 py-1 flex items-center gap-1.5 shadow-lg transition-colors duration-250">
@@ -574,6 +754,25 @@ export default function CenterColumn({
                       className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
                       style={{ aspectRatio: '16/9' }}
                     />
+                    {renderProgressOverlay()}
+
+                    {/* Hover Overlay Button */}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-250 flex items-center justify-center">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsImageGenModalOpen(true);
+                        }}
+                        disabled={isGeneratingImage}
+                        className="px-4 py-2 bg-white hover:bg-zinc-100 text-zinc-900 rounded-xl text-xs font-semibold shadow-lg flex items-center gap-1.5 transition duration-205 scale-95 hover:scale-100 cursor-pointer"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        Regenerate Image with AI
+                      </button>
+                    </div>
                     
                     {/* Brand overlay */}
                     <div className="absolute bottom-3 left-3 bg-white/95 dark:bg-[#09090b]/90 border border-zinc-200 dark:border-zinc-800 rounded-lg px-2.5 py-1.5 flex items-center gap-2 shadow-lg">
@@ -660,6 +859,25 @@ export default function CenterColumn({
                           className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
                           style={{ aspectRatio: '16/9' }}
                         />
+                        {renderProgressOverlay()}
+
+                        {/* Hover Overlay Button */}
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-250 flex items-center justify-center">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setIsImageGenModalOpen(true);
+                            }}
+                            disabled={isGeneratingImage}
+                            className="px-4 py-2 bg-white hover:bg-zinc-100 text-zinc-900 rounded-xl text-xs font-semibold shadow-lg flex items-center gap-1.5 transition duration-205 scale-95 hover:scale-100 cursor-pointer"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                            Regenerate Image with AI
+                          </button>
+                        </div>
 
                         {/* BRANDING OVERLAY INJECTED ELEMENT */}
                         <div className="absolute top-3 left-3 bg-white/95 dark:bg-black/90 border border-zinc-250 dark:border-zinc-800 rounded-lg px-2.5 py-1 flex items-center gap-1.5 shadow-lg transition-colors duration-250">
@@ -681,14 +899,133 @@ export default function CenterColumn({
 
                     </div>
                   </div>
-
                 </div>
               )}
-
             </div>
+
+            {activePost && activePost.imageMetadata && (
+              <div className="w-full max-w-[480px] mt-6 bg-white dark:bg-[#09090b] border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4.5 space-y-3.5 shadow-lg transition-all duration-350 transition-colors duration-250">
+                <div className="flex items-center justify-between border-b border-zinc-150 dark:border-zinc-900 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-zinc-450 dark:text-zinc-555 uppercase tracking-widest">AI Artwork Details</span>
+                    <span className="text-[9px] bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-450 font-bold px-1.5 py-0.5 rounded uppercase font-mono">
+                      {activePost.imageMetadata.status}
+                    </span>
+                  </div>
+                  <span className="text-[9.5px] font-mono text-zinc-400 dark:text-zinc-600">ID: {activePost.imageMetadata.generationId}</span>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3 text-xs">
+                  <div>
+                    <span className="text-[9px] font-semibold text-zinc-400 dark:text-zinc-550 uppercase">Provider</span>
+                    <p className="font-bold text-zinc-850 dark:text-zinc-200 mt-0.5 capitalize">{activePost.imageMetadata.provider} ({activePost.imageMetadata.providerMode} Setup)</p>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-semibold text-zinc-400 dark:text-zinc-550 uppercase font-mono">Model</span>
+                    <p className="font-bold text-zinc-855 dark:text-zinc-200 mt-0.5">{activePost.imageMetadata.model}</p>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-semibold text-zinc-400 dark:text-zinc-550 uppercase font-mono">Time</span>
+                    <p className="font-bold text-zinc-855 dark:text-zinc-200 mt-0.5">{activePost.imageMetadata.generationTime.toFixed(1)}s</p>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-semibold text-zinc-400 dark:text-zinc-550 uppercase">Resolution</span>
+                    <p className="font-bold text-zinc-850 dark:text-zinc-200 mt-0.5">{activePost.imageMetadata.resolution || '1024x1024'}</p>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-semibold text-zinc-400 dark:text-zinc-550 uppercase font-mono">Prompt Version</span>
+                    <p className="font-bold text-zinc-855 dark:text-zinc-200 mt-0.5">{activePost.imageMetadata.promptVersion || 'v1.2'}</p>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-semibold text-zinc-400 dark:text-zinc-555 uppercase font-mono">Pipeline Time</span>
+                    <p className="font-bold text-zinc-855 dark:text-zinc-200 mt-0.5">{activePost.imageMetadata.pipelineDuration ? `${activePost.imageMetadata.pipelineDuration.toFixed(1)}s` : 'N/A'}</p>
+                  </div>
+                </div>
+
+                {/* Reference Images Used List */}
+                <div className="pt-2">
+                  <span className="text-[9px] font-semibold text-zinc-400 dark:text-zinc-550 uppercase block mb-1">Reference Images Used</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {activePost.imageMetadata.usedAssets && activePost.imageMetadata.usedAssets.length > 0 ? (
+                      activePost.imageMetadata.usedAssets.map((asset, idx) => (
+                        <span key={idx} className="text-[9px] bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-850 px-2 py-0.5 rounded font-mono text-zinc-650 dark:text-zinc-400">
+                          🔗 {asset}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-[10px] text-zinc-500 italic">None used</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-3 border-t border-zinc-150 dark:border-zinc-900 text-xs">
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsPromptDetailsOpen(true)}
+                      className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900 text-zinc-700 dark:text-zinc-305 transition font-semibold cursor-pointer"
+                    >
+                      View Prompt Details
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadImage(activePost.currentImageLayerUrl)}
+                      className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900 text-zinc-700 dark:text-zinc-305 transition font-semibold cursor-pointer flex items-center gap-1"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      Download
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsJsonViewerOpen(true)}
+                      className="px-3 py-1.5 rounded-lg border border-[#3b9ffd] bg-[#3b9ffd]/10 hover:bg-[#3b9ffd]/20 text-[#3b9ffd] transition font-semibold cursor-pointer flex items-center gap-1"
+                    >
+                      &lt;/&gt; Prompt
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsImageGenModalOpen(true)}
+                    className="px-3.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-black transition font-semibold cursor-pointer flex items-center gap-1 shadow-sm"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18" />
+                    </svg>
+                    Regenerate
+                  </button>
+                </div>
+              </div>
+            )}
+
           </div>
         )}
       </div>
+
+      <ImageGenModal 
+        isOpen={isImageGenModalOpen} 
+        onClose={() => setIsImageGenModalOpen(false)} 
+        onGenerate={onGenerateImage}
+        companyName={brandKit?.companyName || 'Brand'}
+        apiKeys={apiKeys}
+      />
+
+      {activePost && activePost.imageMetadata && (
+        <PromptDetailsModal
+          isOpen={isPromptDetailsOpen}
+          onClose={() => setIsPromptDetailsOpen(false)}
+          promptText={activePost.imageMetadata.promptText || ''}
+          usedAssets={activePost.imageMetadata.usedAssets || []}
+          promptVersion={activePost.imageMetadata.promptVersion}
+        />
+      )}
+
+      <JsonPromptViewer 
+        isOpen={isJsonViewerOpen}
+        onClose={() => setIsJsonViewerOpen(false)}
+        snapshots={activePost?.imageMetadata?.snapshots}
+      />
 
     </div>
   );

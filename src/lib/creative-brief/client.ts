@@ -7,8 +7,8 @@ export async function callBriefGemini(prompt: string): Promise<any> {
     throw new Error('GEMINI_API_KEY is not defined in .env.local');
   }
 
-  // Tries gemini-2.5-flash-lite first, falls back to gemini-2.5-flash if unavailable
-  const models = ['gemini-2.5-flash-lite', 'gemini-2.5-flash'];
+  // Tries gemini-3.1-flash-lite first, falls back to gemini-2.5-flash-lite and gemini-2.5-flash
+  const models = ['gemini-3.1-flash-lite', 'gemini-2.5-flash-lite', 'gemini-2.5-flash'];
   let lastError: any = null;
 
   for (const model of models) {

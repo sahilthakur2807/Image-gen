@@ -25,6 +25,7 @@ export interface CreativeBrief {
   };
   generationGoal: string;
   imagePrompt?: string; // Storing the generated prompt for image generation
+  imagePromptPackage?: any; // Storing the structured Image Prompt Package
 }
 
 export interface CreativeBriefRequest {

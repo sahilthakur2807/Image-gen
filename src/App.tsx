@@ -29,12 +29,26 @@ export default function App() {
     publishPost,
     refinePost,
     onboardDomain,
-    toggleTheme
+    toggleTheme,
+    isGeneratingImage,
+    isImageGenModalOpen,
+    setIsImageGenModalOpen,
+    generateAIImage,
+    pipelineSteps
   } = useBackend();
 
   const [domainInput, setDomainInput] = useState('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isPublishOpen, setIsPublishOpen] = useState(false);
+
+  useEffect(() => {
+    // If setting has not been opened in this tab session, open developer settings automatically
+    const autoOpened = sessionStorage.getItem('settings_auto_opened');
+    if (!autoOpened) {
+      setIsSettingsOpen(true);
+      sessionStorage.setItem('settings_auto_opened', 'true');
+    }
+  }, []);
 
   const handleDomainSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -237,6 +251,12 @@ export default function App() {
           onPublish={() => setIsPublishOpen(true)}
           designTokens={designTokens}
           processingTime={processingTime}
+          isGeneratingImage={isGeneratingImage}
+          isImageGenModalOpen={isImageGenModalOpen}
+          setIsImageGenModalOpen={setIsImageGenModalOpen}
+          onGenerateImage={generateAIImage}
+          apiKeys={apiKeys}
+          pipelineSteps={pipelineSteps}
         />
 
         {/* Column 3: Right - Operational Sidebar Console */}

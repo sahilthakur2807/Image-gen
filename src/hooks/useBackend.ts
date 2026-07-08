@@ -1,13 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 
 // ============================================================================
-// 🔌 Future-Proofing: Webhook / Backend endpoints
-// ============================================================================
-export const N8N_ONBOARDING_WEBHOOK_URL = 'https://n8n.your-instance.com/webhook/brand-onboarding';
-export const N8N_REFINE_WEBHOOK_URL = 'https://n8n.your-instance.com/webhook/post-refine';
-export const N8N_PUBLISH_WEBHOOK_URL = 'https://n8n.your-instance.com/webhook/post-publish';
-
-// ============================================================================
 // 🏢 Explicit TypeScript Interfaces
 // ============================================================================
 export interface DetectedAssets {
@@ -43,6 +36,28 @@ export interface BrandKit {
   detectionConfidences: DetectionConfidences;
 }
 
+export interface ImageGenerationMetadata {
+  generationId: string;
+  provider: string;
+  providerMode: 'company' | 'custom';
+  model: string;
+  generationTime: number;
+  imageUrl: string;
+  status: string;
+  usedAssets: string[];
+  promptVersion?: string;
+  promptText?: string;
+  resolution?: string;
+  pipelineDuration?: number;
+  snapshots?: {
+    brandKnowledge: any;
+    creativeBrief: any;
+    imagePrompt: any;
+    generation: any;
+    pipelineLog: any;
+  };
+}
+
 export interface PostItem {
   id: string;
   title: string;
@@ -55,16 +70,24 @@ export interface PostItem {
   status: 'Analyzing' | 'Generating' | 'Ready' | 'Needs Review' | 'Published';
   timestamp: string;
   confidenceScore: number;
+  imageMetadata?: ImageGenerationMetadata;
 }
 
 export type ExtractionStatus = 'idle' | 'processing' | 'completed';
 
+export interface PipelineStatusStep {
+  stage: number;
+  name: string;
+  status: 'PENDING' | 'RUNNING' | 'SUCCESS' | 'FAILED';
+  duration?: number;
+  message?: string;
+}
+
 export interface ApiKeys {
-  firecrawlKey: string;
-  geminiKey: string;
-  openaiKey: string;
-  ayrshareKey: string;
-  autoSave: boolean;
+  mode: 'company' | 'custom';
+  provider: 'gemini' | 'openai';
+  customGeminiKey: string;
+  customOpenaiKey: string;
 }
 
 export interface ChatMessage {
@@ -100,6 +123,7 @@ export interface CreativeBrief {
   };
   generationGoal: string;
   imagePrompt?: string;
+  imagePromptPackage?: any;
 }
 
 export interface DesignTokens {
@@ -156,6 +180,10 @@ export function useBackend() {
 
   const [selectedPlatform, setSelectedPlatform] = useState<'LinkedIn' | 'Instagram' | 'Facebook' | 'X'>('LinkedIn');
   const [isRefining, setIsRefining] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [isImageGenModalOpen, setIsImageGenModalOpen] = useState(false);
+  const [generationProgressStep, setGenerationProgressStep] = useState<string | null>(null);
+  const [pipelineSteps, setPipelineSteps] = useState<PipelineStatusStep[]>([]);
   
   // Running timer for crawlers
   const [processingTime, setProcessingTime] = useState<number>(0);
@@ -187,22 +215,23 @@ export function useBackend() {
     }
   ]);
 
-  // API Keys state with LocalStorage auto-save integration
+  // API Keys state with SessionStorage auto-save integration
   const [apiKeys, setApiKeys] = useState<ApiKeys>(() => {
-    const saved = localStorage.getItem('saas_dashboard_keys');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        // Fallback
+    if (typeof window !== 'undefined') {
+      const saved = sessionStorage.getItem('saas_dashboard_keys');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch {
+          // Fallback
+        }
       }
     }
     return {
-      firecrawlKey: '',
-      geminiKey: '',
-      openaiKey: '',
-      ayrshareKey: '',
-      autoSave: true
+      mode: 'company',
+      provider: 'gemini',
+      customGeminiKey: '',
+      customOpenaiKey: ''
     };
   });
 
@@ -211,10 +240,8 @@ export function useBackend() {
   const updateApiKeys = (updatedKeys: Partial<ApiKeys>) => {
     setApiKeys(prev => {
       const next = { ...prev, ...updatedKeys };
-      if (next.autoSave) {
-        localStorage.setItem('saas_dashboard_keys', JSON.stringify(next));
-      } else {
-        localStorage.removeItem('saas_dashboard_keys');
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('saas_dashboard_keys', JSON.stringify(next));
       }
       return next;
     });
@@ -317,7 +344,7 @@ export function useBackend() {
       {
         id: `msg-pub-${Date.now()}`,
         sender: 'system',
-        text: `Post successfully published to selected channels! Ayrshare API response status 200 OK.`,
+        text: `Post successfully published to selected channels!`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }
     ]);
@@ -562,13 +589,14 @@ export function useBackend() {
         title: page.title || `Crawled Page ${idx + 1}`,
         contentType: 'Web Page',
         targetPlatforms: ['LinkedIn', 'X', 'Facebook'],
-        currentImageLayerUrl: page.images[0] || '/brand_asset_1.png',
+        currentImageLayerUrl: summary.lastGeneratedImageUrl || summary.homepageImages[0] || page.images[0] || '/brand_asset_1.png',
         captionText: page.metaDescription || (page.markdownContent ? page.markdownContent.substring(0, 180) + '...' : ''),
         hashtags: '#crawled #webcontent #' + summary.companyName.toLowerCase(),
         cta: `Read page: ${page.url}`,
         status: 'Ready',
         timestamp: 'Jul 8, Just Now',
-        confidenceScore: 98.2
+        confidenceScore: 98.2,
+        imageMetadata: summary.lastMetadata || undefined
       }));
 
       // Cache scraped history
@@ -675,6 +703,164 @@ export function useBackend() {
     }
   };
 
+  const generateAIImage = async (provider: 'gemini' | 'openai' | 'mock', settings: any) => {
+    if (!activePost || !activeDomain) return;
+
+    setIsGeneratingImage(true);
+    setIsImageGenModalOpen(false);
+
+    // Initialize 9 stages checklist
+    setPipelineSteps([
+      { stage: 1, name: 'Website Validation', status: 'PENDING' },
+      { stage: 2, name: 'Firecrawl', status: 'PENDING' },
+      { stage: 3, name: 'Parsing', status: 'PENDING' },
+      { stage: 4, name: 'Asset Filtering', status: 'PENDING' },
+      { stage: 5, name: 'Brand Knowledge', status: 'PENDING' },
+      { stage: 6, name: 'Creative Brief', status: 'PENDING' },
+      { stage: 7, name: 'Prompt Builder', status: 'PENDING' },
+      { stage: 8, name: 'Image Generation', status: 'PENDING' },
+      { stage: 9, name: 'Saving Results', status: 'PENDING' }
+    ]);
+
+    setGenerationProgressStep('Preparing Prompt');
+
+    // Add immediate user trigger notification in chat
+    const userMsg: ChatMessage = {
+      id: `msg-user-gen-${Date.now()}`,
+      sender: 'user',
+      text: `Trigger unified pipeline run using ${provider === 'mock' ? 'Company Setup' : provider === 'gemini' ? 'Google Gemini' : 'OpenAI DALL-E'} adapter... Settings: aspect ratio ${settings.aspectRatio}, quality ${settings.quality}.`,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+    setChatHistory(prev => [...prev, userMsg]);
+
+    try {
+      const response = await fetch('/api/generate-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          companyName: activeDomain,
+          provider: apiKeys.mode === 'company' ? provider : apiKeys.provider,
+          providerMode: apiKeys.mode,
+          settings,
+          geminiImageKey: apiKeys.mode === 'company' ? undefined : apiKeys.customGeminiKey,
+          openaiImageKey: apiKeys.mode === 'company' ? undefined : apiKeys.customOpenaiKey
+        })
+      });
+
+      if (!response.ok) {
+        const errJson = await response.json();
+        throw new Error(errJson.error || 'Pipeline execution failed on server.');
+      }
+
+      if (!response.body) {
+        throw new Error('No response body returned from server stream.');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let done = false;
+      let buffer = '';
+
+      while (!done) {
+        const { value, done: readerDone } = await reader.read();
+        done = readerDone;
+        if (value) {
+          buffer += decoder.decode(value, { stream: !done });
+          const lines = buffer.split('\n');
+          // Hold the trailing segment
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed) continue;
+            if (trimmed.startsWith('data: ')) {
+              const dataStr = trimmed.substring(6).trim();
+              try {
+                const event = JSON.parse(dataStr);
+                
+                if (event.type === 'stage_start') {
+                  setGenerationProgressStep(event.name);
+                  setPipelineSteps(prev => 
+                    prev.map(s => s.stage === event.stage ? { ...s, status: 'RUNNING', message: 'Executing...' } : s)
+                  );
+                } else if (event.type === 'stage_end') {
+                  setPipelineSteps(prev => 
+                    prev.map(s => s.stage === event.stage ? { 
+                      ...s, 
+                      status: event.status, 
+                      duration: event.duration, 
+                      message: event.message 
+                    } : s)
+                  );
+                } else if (event.type === 'complete') {
+                  setGenerationProgressStep('Completed');
+                  const result = event.result;
+                  
+                  // Update active post with new generated image URL and snapshots
+                  const updatedPost: PostItem = {
+                    ...activePost,
+                    currentImageLayerUrl: result.imageUrl,
+                    confidenceScore: Math.min(100, Math.round((activePost.confidenceScore + 1.5) * 10) / 10),
+                    timestamp: 'Jul 8, Just Now (Generated)',
+                    imageMetadata: {
+                      generationId: result.generationId,
+                      provider: result.provider,
+                      providerMode: result.providerMode,
+                      model: result.model,
+                      generationTime: result.generationTime,
+                      imageUrl: result.imageUrl,
+                      status: result.status,
+                      usedAssets: result.usedAssets || [],
+                      promptVersion: 'v1.2',
+                      promptText: result.promptText || '',
+                      resolution: result.resolution,
+                      pipelineDuration: result.pipelineDuration,
+                      snapshots: result.snapshots
+                    }
+                  };
+
+                  const nextPosts = posts.map(p => p.id === activePost.id ? updatedPost : p);
+                  setPosts(nextPosts);
+                  setActivePost(updatedPost);
+                  updateScrapedDataForDomain(activeDomain, null, nextPosts);
+
+                  const systemMsg: ChatMessage = {
+                    id: `msg-sys-gen-${Date.now()}`,
+                    sender: 'system',
+                    text: `Successfully generated artwork using pipeline orchestrator! Model: ${result.model}. Total time: ${result.pipelineDuration.toFixed(1)}s.`,
+                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                  };
+                  setChatHistory(prev => [...prev, systemMsg]);
+                } else if (event.type === 'error') {
+                  throw new Error(event.error);
+                }
+              } catch (e: any) {
+                console.error("Failed to parse line", trimmed, e);
+              }
+            }
+          }
+        }
+      }
+
+    } catch (err: any) {
+      console.error('Pipeline failed:', err);
+      // Set current running stage as failed
+      setPipelineSteps(prev => prev.map(s => s.status === 'RUNNING' ? { ...s, status: 'FAILED', message: err.message } : s));
+      
+      const systemMsg: ChatMessage = {
+        id: `msg-sys-err-${Date.now()}`,
+        sender: 'system',
+        text: `Error: Failed to process image generation with selected adapter. Reason: ${err.message || err}`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      setChatHistory(prev => [...prev, systemMsg]);
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+
   useEffect(() => {
     const currentLoadingInterval = loadingIntervalRef.current;
     const currentTimer = timerRef.current;
@@ -710,6 +896,12 @@ export function useBackend() {
     toggleTheme,
     duplicatePost,
     regeneratePost,
-    updateActivePostContent
+    updateActivePostContent,
+    isGeneratingImage,
+    isImageGenModalOpen,
+    setIsImageGenModalOpen,
+    generateAIImage,
+    generationProgressStep,
+    pipelineSteps
   };
 }

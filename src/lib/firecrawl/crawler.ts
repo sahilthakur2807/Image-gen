@@ -24,6 +24,8 @@ export interface CrawlSummary {
   totalFilteredImages: number;
   discardedImages: number;
   brandKnowledge?: BrandKnowledge;
+  lastGeneratedImageUrl?: string;
+  lastMetadata?: any;
 }
 
 function getPageScore(urlStr: string): number {
@@ -165,16 +167,21 @@ export async function getWebsiteCrawlStatus(
 
     const filtered = filterAssets(selectedPages, homepage);
 
+    // Save filtered assets to disk
+    const outputDir = path.join(process.cwd(), 'brand-knowledge');
+    if (!fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir, { recursive: true });
+    }
+    const assetsFilename = path.join(outputDir, `${companyName.toLowerCase()}-filtered-assets.json`);
+    fs.writeFileSync(assetsFilename, JSON.stringify(filtered, null, 2), 'utf8');
+    Logger.success(`Saved Filtered Assets JSON file to: ${assetsFilename}`);
+
     let brandKnowledge: BrandKnowledge | undefined = undefined;
     try {
       if (process.env.GEMINI_API_KEY && !process.env.GEMINI_API_KEY.includes('YOUR_API_KEY')) {
         brandKnowledge = await analyzeBrandKnowledge(selectedPages, {});
         
         // Save separately
-        const outputDir = path.join(process.cwd(), 'brand-knowledge');
-        if (!fs.existsSync(outputDir)) {
-          fs.mkdirSync(outputDir, { recursive: true });
-        }
         const filename = path.join(outputDir, `${companyName.toLowerCase()}-brand-knowledge.json`);
         fs.writeFileSync(filename, JSON.stringify(brandKnowledge, null, 2), 'utf8');
         Logger.success(`Saved Brand Knowledge JSON file to: ${filename}`);
@@ -228,6 +235,52 @@ export async function getWebsiteCrawlStatus(
       Logger.error('Brand Knowledge Engine pipeline execution failed', err);
     }
 
+    // Look up last generated image for this company to restore as default
+    let lastGeneratedImageUrl = '';
+    let lastMetadata = null;
+    try {
+      const generationsDir = path.join(process.cwd(), 'generations');
+      if (fs.existsSync(generationsDir)) {
+        const folders = fs.readdirSync(generationsDir)
+          .filter(f => f.startsWith('generation-') && fs.statSync(path.join(generationsDir, f)).isDirectory());
+        
+        // Sort folders descending to find the newest one
+        folders.sort((a, b) => b.localeCompare(a));
+        
+        for (const folder of folders) {
+          const metaPath = path.join(generationsDir, folder, 'generation.json');
+          if (fs.existsSync(metaPath)) {
+            const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+            const brandMetaPath = path.join(generationsDir, folder, 'brand-knowledge.json');
+            if (fs.existsSync(brandMetaPath)) {
+              const brandMeta = JSON.parse(fs.readFileSync(brandMetaPath, 'utf8'));
+              const normalizedTarget = companyName.toLowerCase().replace(/[^a-z0-9]/g, '');
+              const brandTarget = brandMeta.companyName ? brandMeta.companyName.toLowerCase().replace(/[^a-z0-9]/g, '') : '';
+              if (brandTarget === normalizedTarget) {
+                lastGeneratedImageUrl = meta.imageUrl;
+                lastMetadata = meta;
+                
+                const creativeBriefPath = path.join(generationsDir, folder, 'creative-brief.json');
+                const imagePromptPath = path.join(generationsDir, folder, 'image-prompt.json');
+                const pipelineLogPath = path.join(generationsDir, folder, 'pipeline-log.json');
+                
+                meta.snapshots = {
+                  brandKnowledge: brandMeta,
+                  creativeBrief: fs.existsSync(creativeBriefPath) ? JSON.parse(fs.readFileSync(creativeBriefPath, 'utf8')) : undefined,
+                  imagePrompt: fs.existsSync(imagePromptPath) ? JSON.parse(fs.readFileSync(imagePromptPath, 'utf8')) : undefined,
+                  generation: meta,
+                  pipelineLog: fs.existsSync(pipelineLogPath) ? JSON.parse(fs.readFileSync(pipelineLogPath, 'utf8')) : undefined
+                };
+                break;
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error("[CrawlStatus] Failed to recover last generated image:", e);
+    }
+
     const results: CrawlSummary = {
       companyName,
       homepage,
@@ -240,8 +293,32 @@ export async function getWebsiteCrawlStatus(
       homepageImages: filtered.homepageImages,
       totalFilteredImages: filtered.totalFilteredImages,
       discardedImages: filtered.discardedImages,
-      brandKnowledge
+      brandKnowledge,
+      lastGeneratedImageUrl: lastGeneratedImageUrl || undefined,
+      lastMetadata: lastMetadata || undefined
     };
+
+    // Save raw crawl info to disk
+    const crawlFilename = path.join(outputDir, `${companyName.toLowerCase()}-crawl.json`);
+    const crawlPayload = {
+      homepage,
+      companyName,
+      totalSubpages: selectedPages.length,
+      pages: selectedPages.map(p => ({
+        url: p.url,
+        title: p.title,
+        metaDescription: p.metaDescription,
+        headingCount: p.headings.length,
+        imageCount: p.images.length,
+        internalLinksCount: p.internalLinks.length,
+        externalLinksCount: p.externalLinks.length
+      })),
+      totalUniqueImages: totalImages,
+      totalInternalLinks: uniqueInternalLinks.size,
+      totalExternalLinks: uniqueExternalLinks.size
+    };
+    fs.writeFileSync(crawlFilename, JSON.stringify(crawlPayload, null, 2), 'utf8');
+    Logger.success(`Saved Crawl JSON file to: ${crawlFilename}`);
 
     Logger.success(`=== CRAWL SUCCESSFUL ===`);
     Logger.success(`Total Subpages Scraped: ${selectedPages.length}`);

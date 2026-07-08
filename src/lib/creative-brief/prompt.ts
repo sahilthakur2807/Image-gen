@@ -4,6 +4,7 @@ import type { CreativeBrief } from './types.js';
 export function getCreativeBriefPrompt(brandKnowledge: BrandKnowledge, userRequest: string): string {
   return `
   You are an expert Creative Director. You must transform the following Brand Knowledge and a User Campaign Request into a structured Creative Brief JSON.
+  You must also perform prompt engineering to synthesize a highly descriptive, professional text prompt that an AI image generator can use to generate the visual layer for this social graphic.
   
   === BRAND KNOWLEDGE ===
   Company: ${brandKnowledge.companyName}
@@ -17,6 +18,7 @@ export function getCreativeBriefPrompt(brandKnowledge: BrandKnowledge, userReque
   Visual Style Guide: ${brandKnowledge.visualIdentity?.designStyle}
   Whitespace Preferences: ${brandKnowledge.visualIdentity?.whitespaceUsage}
   Key Products: ${JSON.stringify(brandKnowledge.productsAndServices)}
+  Image Generation Recommendations from Brand: ${JSON.stringify(brandKnowledge.imageGenerationRecommendations)}
   
   === USER CAMPAIGN REQUEST ===
   "${userRequest}"
@@ -38,6 +40,7 @@ export function getCreativeBriefPrompt(brandKnowledge: BrandKnowledge, userReque
   14. visual.colorUsage: Swatch layout recommendations matching brand colors.
   15. visual.typography: Headline font weights, alignment, text density hierarchy rules.
   16. generationGoal: Describe what the image should communicate to the audience.
+  17. imagePrompt: A highly descriptive, professional text prompt that an AI image generator (like Imagen 3, Midjourney, or DALL-E) can use to generate the visual layer for this social graphic. Avoid referencing UI components or specific text labels directly.
 
   === RULES ===
   - Do NOT include any prompt engineering, AI model directives, negative prompts, or keywords like "Gemini", "OpenAI", "Midjourney", or "AI".
@@ -68,32 +71,13 @@ export function getCreativeBriefPrompt(brandKnowledge: BrandKnowledge, userReque
       "colorUsage": {},
       "typography": {}
     },
-    "generationGoal": ""
+    "generationGoal": "",
+    "imagePrompt": ""
   }
   `;
 }
 
-export function getImagePromptSynthesisPrompt(brief: CreativeBrief, brandKnowledge: BrandKnowledge): string {
-  return `
-  You are an advanced Prompt Engineer. Create a detailed, high-quality image generation text prompt based on this Creative Brief:
-  
-  === CREATIVE BRIEF ===
-  Campaign Objective: ${brief.campaign.objective}
-  Visual Style: ${brief.visual.style}
-  Layout Recommendation: ${brief.visual.layout}
-  Focal Asset: ${brief.visual.imageFocus}
-  Composition: ${brief.visual.composition}
-  Visual Goal: ${brief.generationGoal}
-  Color Swatch Guidelines: ${JSON.stringify(brief.visual.colorUsage)}
-  Typography Swatch Guidelines: ${JSON.stringify(brief.visual.typography)}
-  Image Generation Recommendations from Brand: ${JSON.stringify(brandKnowledge.imageGenerationRecommendations)}
-  
-  === GOAL ===
-  Synthesize a highly descriptive, professional text prompt that an AI image generator (like Imagen 3, Midjourney, or DALL-E) can use to generate the visual layer for this social graphic.
-  
-  Return a JSON object containing the synthesized prompt:
-  {
-    "imagePrompt": "A highly detailed, professional, studio lighting style, minimal composition featuring... [Add descriptive prompts here]"
-  }
-  `;
+// Deprecated: Kept for legacy module imports
+export function getImagePromptSynthesisPrompt(_brief: CreativeBrief, _brandKnowledge: BrandKnowledge): string {
+  return '';
 }
