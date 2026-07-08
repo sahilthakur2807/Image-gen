@@ -74,6 +74,34 @@ export interface ChatMessage {
   timestamp: string;
 }
 
+export interface CreativeBrief {
+  campaign: {
+    objective: string;
+    platform: string;
+    contentType: string;
+  };
+  audience: {
+    primary: string;
+    secondary: string;
+  };
+  message: {
+    coreMessage: string;
+    headlineDirection: string;
+    cta: string;
+  };
+  visual: {
+    style: string;
+    layout: string;
+    composition: string;
+    imageFocus: string;
+    priorityAssets: string[];
+    colorUsage: Record<string, string>;
+    typography: Record<string, string>;
+  };
+  generationGoal: string;
+  imagePrompt?: string;
+}
+
 export interface DesignTokens {
   typography: string;
   spacing: string;
@@ -124,6 +152,7 @@ export function useBackend() {
   const [brandKit, setBrandKit] = useState<BrandKit | null>(null);
   const [posts, setPosts] = useState<PostItem[]>([]);
   const [activePost, setActivePost] = useState<PostItem | null>(null);
+  const [creativeBrief, setCreativeBrief] = useState<CreativeBrief | null>(null);
 
   const [selectedPlatform, setSelectedPlatform] = useState<'LinkedIn' | 'Instagram' | 'Facebook' | 'X'>('LinkedIn');
   const [isRefining, setIsRefining] = useState(false);
@@ -295,7 +324,7 @@ export function useBackend() {
   };
 
   // Convert conversational input to post refinement
-  const refinePost = (prompt: string) => {
+  const refinePost = async (prompt: string) => {
     if (!prompt.trim() || !activePost || !activeDomain) return;
 
     const userMsgId = `msg-user-${Date.now()}`;
@@ -309,55 +338,84 @@ export function useBackend() {
     setChatHistory(prev => [...prev, userMsg]);
     setIsRefining(true);
 
-    setTimeout(() => {
-      let nextPosts = [...posts];
-      setActivePost(prev => {
-        if (!prev) return null;
-        let updatedCaption = prev.captionText;
-        let updatedImage = prev.currentImageLayerUrl;
-
-        const lowerPrompt = prompt.toLowerCase();
-        
-        if (lowerPrompt.includes('shorten') || lowerPrompt.includes('concise')) {
-          updatedCaption = prev.captionText.split('. ')[0] + '.';
-        } else if (lowerPrompt.includes('premium')) {
-          updatedCaption = "Experience elite-tier speed and styling. " + prev.captionText;
-        } else if (lowerPrompt.includes('cta') || lowerPrompt.includes('call to action')) {
-          updatedCaption = prev.captionText + " Get started for free today.";
-        }
-
-        if (lowerPrompt.includes('image') || lowerPrompt.includes('style') || lowerPrompt.includes('theme') || lowerPrompt.includes('background') || lowerPrompt.includes('dark')) {
-          if (prev.currentImageLayerUrl === '/brand_asset_1.png') {
-            updatedImage = '/brand_asset_2.png';
-          } else if (prev.currentImageLayerUrl === '/brand_asset_2.png') {
-            updatedImage = '/brand_asset_3.png';
-          } else {
-            updatedImage = '/brand_asset_1.png';
-          }
-        }
-
-        const nextPost = {
-          ...prev,
-          captionText: updatedCaption,
-          currentImageLayerUrl: updatedImage
-        };
-
-        nextPosts = posts.map(item => item.id === prev.id ? nextPost : item);
-        return nextPost;
+    try {
+      // 1. Fetch creative brief endpoint
+      const response = await fetch('/api/creative-brief', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          domain: activeDomain,
+          userRequest: prompt
+        })
       });
 
+      if (!response.ok) {
+        throw new Error('Creative Brief endpoint failed');
+      }
+
+      const brief: CreativeBrief = await response.json();
+      setCreativeBrief(brief);
+
+      // 2. Select appropriate visual layer based on brief's focal asset
+      let visualUrl = activePost.currentImageLayerUrl;
+      if (brandKit) {
+        const focus = (brief.visual?.imageFocus || '').toLowerCase();
+        if (focus.includes('dashboard') || focus.includes('screen')) {
+          visualUrl = brandKit.assets.dashboard;
+        } else if (focus.includes('logo')) {
+          visualUrl = brandKit.assets.logo;
+        } else if (focus.includes('product')) {
+          visualUrl = brandKit.assets.product[0] || brandKit.assets.hero;
+        } else if (focus.includes('team') || focus.includes('people')) {
+          visualUrl = brandKit.assets.team;
+        } else if (focus.includes('illustration')) {
+          visualUrl = brandKit.assets.illustration;
+        } else {
+          visualUrl = brandKit.assets.hero;
+        }
+      }
+
+      // 3. Update active post details in sync with the Creative Brief
+      const updatedPost: PostItem = {
+        ...activePost,
+        contentType: brief.campaign.contentType,
+        title: `${brief.campaign.objective} Campaign`,
+        cta: brief.message.cta,
+        captionText: brief.message.coreMessage,
+        targetPlatforms: [brief.campaign.platform as any],
+        currentImageLayerUrl: visualUrl
+      };
+
+      const nextPosts = posts.map(item => item.id === activePost.id ? updatedPost : item);
       setPosts(nextPosts);
+      setActivePost(updatedPost);
+
+      // Cache changes
       updateScrapedDataForDomain(activeDomain, null, nextPosts);
 
+      // 4. Update the chat console history
       const systemMsg: ChatMessage = {
         id: `msg-sys-${Date.now()}`,
         sender: 'system',
-        text: 'Post layout refined. Brand canvas visual structure updated and typography tokens optimized via Gemini model parameters.',
+        text: `Creative Brief compiled for objective: "${brief.campaign.objective}". Audience set to "${brief.audience.primary}". Platform updated to ${brief.campaign.platform}. Visual style set to "${brief.visual.style}". Image prompt successfully synthesized.`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setChatHistory(prev => [...prev, systemMsg]);
+
+    } catch (err: any) {
+      console.error('Failed to generate creative brief:', err);
+      const errorMsg: ChatMessage = {
+        id: `msg-err-${Date.now()}`,
+        sender: 'system',
+        text: `Error: Failed to process creative brief. Standard refining template applied.`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      setChatHistory(prev => [...prev, errorMsg]);
+    } finally {
       setIsRefining(false);
-    }, 1500);
+    }
   };
 
   // Domain Scraping / Onboarding flow
@@ -632,6 +690,7 @@ export function useBackend() {
     brandKit,
     posts,
     activePost,
+    creativeBrief,
     selectedPlatform,
     isRefining,
     chatHistory,

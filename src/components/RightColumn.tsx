@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import type { BrandKit, ChatMessage, DesignTokens } from '../hooks/useBackend';
+import type { BrandKit, ChatMessage, DesignTokens, CreativeBrief } from '../hooks/useBackend';
 
 interface RightColumnProps {
   brandKit: BrandKit | null;
@@ -8,6 +8,7 @@ interface RightColumnProps {
   onRefinePost: (prompt: string) => void;
   designTokens: DesignTokens;
   onUpdateToken: (key: keyof DesignTokens, value: string) => void;
+  creativeBrief: CreativeBrief | null;
 }
 
 export default function RightColumn({ 
@@ -16,7 +17,8 @@ export default function RightColumn({
   isRefining, 
   onRefinePost, 
   designTokens, 
-  onUpdateToken 
+  onUpdateToken,
+  creativeBrief
 }: RightColumnProps) {
   const [inputText, setInputText] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -27,7 +29,8 @@ export default function RightColumn({
     brandKit: false,
     assets: false,
     tokens: false,
-    confidence: false
+    confidence: false,
+    creativeBrief: false
   });
 
   const toggleSection = (section: keyof typeof collapsed) => {
@@ -307,6 +310,90 @@ export default function RightColumn({
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+
+            {/* SECTION 6: Campaign Creative Brief */}
+            <div className="border-b border-zinc-150 dark:border-zinc-900">
+              <button 
+                onClick={() => toggleSection('creativeBrief')}
+                className="w-full flex items-center justify-between p-3.5 text-left font-semibold text-[10px] uppercase tracking-widest text-zinc-450 dark:text-zinc-500 bg-zinc-50/20 dark:bg-zinc-950/10 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition cursor-pointer"
+              >
+                <span>6. Campaign Creative Brief</span>
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  className={`h-3 w-3 text-zinc-400 transition-transform duration-200 ${collapsed.creativeBrief ? '-rotate-90' : ''}`} 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {!collapsed.creativeBrief && (
+                <div className="p-4 space-y-3.5 animate-fade-in text-xs">
+                  {creativeBrief ? (
+                    <div className="space-y-3.5">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <p className="text-[8px] font-bold text-zinc-400 dark:text-zinc-550 uppercase tracking-wide">Objective</p>
+                          <p className="font-semibold text-zinc-800 dark:text-zinc-200 mt-0.5">{creativeBrief.campaign?.objective}</p>
+                        </div>
+                        <div>
+                          <p className="text-[8px] font-bold text-zinc-400 dark:text-zinc-550 uppercase tracking-wide">Audience</p>
+                          <p className="font-semibold text-zinc-800 dark:text-zinc-200 mt-0.5 truncate" title={creativeBrief.audience?.primary}>{creativeBrief.audience?.primary}</p>
+                        </div>
+                        <div>
+                          <p className="text-[8px] font-bold text-zinc-400 dark:text-zinc-550 uppercase tracking-wide">Platform</p>
+                          <p className="font-semibold text-zinc-800 dark:text-zinc-200 mt-0.5">{creativeBrief.campaign?.platform}</p>
+                        </div>
+                        <div>
+                          <p className="text-[8px] font-bold text-zinc-400 dark:text-zinc-550 uppercase tracking-wide">Content Type</p>
+                          <p className="font-semibold text-zinc-800 dark:text-zinc-200 mt-0.5">{creativeBrief.campaign?.contentType}</p>
+                        </div>
+                        <div>
+                          <p className="text-[8px] font-bold text-zinc-400 dark:text-zinc-550 uppercase tracking-wide">Visual Style</p>
+                          <p className="font-semibold text-zinc-800 dark:text-zinc-200 mt-0.5 truncate" title={creativeBrief.visual?.style}>{creativeBrief.visual?.style}</p>
+                        </div>
+                        <div>
+                          <p className="text-[8px] font-bold text-zinc-400 dark:text-zinc-550 uppercase tracking-wide">Layout</p>
+                          <p className="font-semibold text-zinc-800 dark:text-zinc-200 mt-0.5 truncate" title={creativeBrief.visual?.layout}>{creativeBrief.visual?.layout}</p>
+                        </div>
+                        <div className="col-span-2">
+                          <p className="text-[8px] font-bold text-zinc-400 dark:text-zinc-550 uppercase tracking-wide">Core Message</p>
+                          <p className="font-semibold text-zinc-800 dark:text-zinc-200 mt-0.5 leading-normal">{creativeBrief.message?.coreMessage}</p>
+                        </div>
+                        <div className="col-span-2">
+                          <p className="text-[8px] font-bold text-zinc-400 dark:text-zinc-550 uppercase tracking-wide">Headline Direction</p>
+                          <p className="font-semibold text-zinc-800 dark:text-zinc-200 mt-0.5 leading-normal">{creativeBrief.message?.headlineDirection}</p>
+                        </div>
+                        <div>
+                          <p className="text-[8px] font-bold text-zinc-400 dark:text-zinc-550 uppercase tracking-wide">CTA</p>
+                          <p className="font-semibold text-zinc-800 dark:text-zinc-200 mt-0.5">{creativeBrief.message?.cta}</p>
+                        </div>
+                        <div>
+                          <p className="text-[8px] font-bold text-zinc-400 dark:text-zinc-550 uppercase tracking-wide">Priority Assets</p>
+                          <p className="font-semibold text-zinc-800 dark:text-zinc-200 mt-0.5 truncate" title={creativeBrief.visual?.priorityAssets?.join(', ')}>
+                            {creativeBrief.visual?.priorityAssets?.join(', ')}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Generated Prompt Section */}
+                      <div className="pt-3 border-t border-zinc-100 dark:border-zinc-900">
+                        <p className="text-[8px] font-bold text-zinc-400 dark:text-zinc-550 uppercase tracking-wide pb-1.5">Generated Image Prompt (JSON)</p>
+                        <div className="relative group">
+                          <pre className="p-3 border border-zinc-200 dark:border-zinc-800 rounded-xl bg-zinc-50 dark:bg-[#0d0d11] text-[9.5px] font-mono text-zinc-700 dark:text-zinc-300 overflow-x-auto whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto">
+                            {JSON.stringify({ prompt: creativeBrief.imagePrompt || '' }, null, 2)}
+                          </pre>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-zinc-400 dark:text-zinc-650 text-center py-2 italic text-[11px]">Type a campaign directive in the console below to generate a brief (e.g. "Create a LinkedIn launch post")</p>
+                  )}
                 </div>
               )}
             </div>

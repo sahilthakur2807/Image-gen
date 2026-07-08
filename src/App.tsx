@@ -12,6 +12,7 @@ export default function App() {
     currentLoadingStep,
     brandKit,
     activePost,
+    creativeBrief,
     selectedPlatform,
     isRefining,
     chatHistory,
@@ -246,6 +247,7 @@ export default function App() {
           onRefinePost={refinePost}
           designTokens={designTokens}
           onUpdateToken={updateDesignToken}
+          creativeBrief={creativeBrief}
         />
 
       </div>

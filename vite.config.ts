@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { startWebsiteCrawl, getWebsiteCrawlStatus } from './src/lib/firecrawl/crawler.js';
+import { generateCreativeBrief } from './src/lib/creative-brief/engine.js';
 import { Logger } from './src/lib/firecrawl/logger.js';
 
 function getRequestBody(req: any): Promise<any> {
@@ -31,11 +32,46 @@ export default defineConfig({
     {
       name: 'api-analyze-middleware',
       configureServer(server) {
+        // 1. POST /api/creative-brief
+        server.middlewares.use('/api/creative-brief', async (req, res) => {
+          if (req.method !== 'POST') {
+            res.statusCode = 405;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: 'Method Not Allowed' }));
+            return;
+          }
+
+          try {
+            const body = await getRequestBody(req);
+            const { domain, userRequest } = body;
+
+            if (!domain || !userRequest) {
+              res.statusCode = 400;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: 'domain and userRequest parameters are required' }));
+              return;
+            }
+
+            const cleanDomain = domain.replace('www.', '').split(':')[0].toLowerCase();
+            const brief = await generateCreativeBrief(cleanDomain, userRequest);
+
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(brief));
+          } catch (error: any) {
+            Logger.error(`[API POST /api/creative-brief] Failed:`, error);
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: error.message || 'An error occurred' }));
+          }
+        });
+
+        // 2. /api/analyze
         server.middlewares.use('/api/analyze', async (req, res) => {
           const urlObj = new URL(req.url || '', `http://${req.headers.host}`);
           const pathname = urlObj.pathname;
 
-          // 1. GET /api/analyze/status?id=...&companyName=...&homepage=...
+          // GET /api/analyze/status
           if (pathname === '/status' || pathname.endsWith('/status')) {
             if (req.method !== 'GET') {
               res.statusCode = 405;
@@ -69,7 +105,7 @@ export default defineConfig({
             return;
           }
 
-          // 2. POST /api/analyze (Initiates crawl)
+          // POST /api/analyze
           if (req.method !== 'POST') {
             res.statusCode = 405;
             res.setHeader('Content-Type', 'application/json');
