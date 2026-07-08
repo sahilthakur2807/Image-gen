@@ -1,85 +1,76 @@
-import type { PostItem } from '../hooks/useBackend';
-
 interface LeftColumnProps {
-  posts: PostItem[];
-  activePost: PostItem | null;
-  onSelectPost: (id: string) => void;
+  scrapedDomains: string[];
+  activeDomain: string | null;
+  onSelectDomain: (domain: string) => void;
   onOpenSettings: () => void;
 }
 
-export default function LeftColumn({ posts, activePost, onSelectPost, onOpenSettings }: LeftColumnProps) {
+export default function LeftColumn({ 
+  scrapedDomains, 
+  activeDomain, 
+  onSelectDomain, 
+  onOpenSettings 
+}: LeftColumnProps) {
   return (
-    <div className="w-[280px] h-full bg-white dark:bg-[#09090b] border-r border-zinc-200 dark:border-zinc-800/50 flex flex-col justify-between transition-colors duration-250">
+    <div className="w-[300px] h-full bg-white dark:bg-[#09090b] border-r border-zinc-200 dark:border-zinc-800/50 flex flex-col justify-between transition-colors duration-250 shrink-0">
       
-      {/* Upper Content Queue */}
+      {/* Upper Scraped URLs list */}
       <div className="flex flex-col flex-1 overflow-y-auto no-scrollbar">
         {/* Title */}
         <div className="p-4 border-b border-zinc-200 dark:border-zinc-800/50 flex items-center justify-between transition-colors duration-250">
-          <span className="text-xs font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Content Queue</span>
-          <span className="text-[10px] font-mono text-zinc-500 dark:text-zinc-600 bg-zinc-100 dark:bg-zinc-900 px-2 py-0.5 rounded border border-zinc-200 dark:border-zinc-800/50 transition-colors duration-250">
-            {posts.length} Posts
+          <span className="text-xs font-semibold uppercase tracking-widest text-zinc-550 dark:text-zinc-400">Scraped Websites</span>
+          <span className="text-[10px] font-mono text-zinc-500 bg-zinc-100 dark:bg-zinc-900 px-2 py-0.5 rounded border border-zinc-200 dark:border-zinc-800/50 transition-colors duration-250">
+            {scrapedDomains.length} Domains
           </span>
         </div>
 
         {/* List items */}
-        <div className="p-2 space-y-1">
-          {posts.map((post) => {
-            const isActive = activePost?.id === post.id;
-            return (
-              <button
-                key={post.id}
-                onClick={() => onSelectPost(post.id)}
-                className={`w-full text-left p-3 rounded-md transition duration-200 border flex flex-col gap-2 ${
-                  isActive 
-                    ? 'bg-zinc-100 dark:bg-[#18181b] border-zinc-300 dark:border-zinc-700/80 text-zinc-900 dark:text-white' 
-                    : 'bg-transparent border-transparent hover:bg-zinc-50 dark:hover:bg-[#0c0c0e] text-zinc-500 dark:text-zinc-400 hover:text-zinc-850 dark:hover:text-zinc-200'
-                }`}
-              >
-                {/* Header line: Title & status dot */}
-                <div className="flex items-center justify-between w-full">
-                  <span className="text-sm font-medium tracking-tight truncate flex-1">
-                    {post.title}
-                  </span>
-                  
-                  {/* Status Indicator Dot */}
-                  <div className="flex items-center gap-1.5 ml-2">
-                    <span 
-                      className={`h-1.5 w-1.5 rounded-full ${
-                        post.status === 'Scheduled' 
-                          ? 'bg-zinc-800 dark:bg-white shadow-[0_0_8px_rgba(0,0,0,0.15)] dark:shadow-[0_0_8px_rgba(255,255,255,0.8)]' 
-                          : post.status === 'Ready'
-                          ? 'bg-zinc-500 dark:bg-zinc-400'
-                          : 'bg-zinc-350 dark:bg-zinc-700'
-                      }`}
-                    />
-                    <span className="text-[9px] uppercase tracking-wider font-mono text-zinc-450 dark:text-zinc-500 text-right">
-                      {post.status}
-                    </span>
+        <div className="p-3.5 space-y-2">
+          {scrapedDomains.length === 0 ? (
+            <div className="text-center py-8 text-zinc-400 dark:text-zinc-650 text-xs">
+              No websites analyzed yet.
+            </div>
+          ) : (
+            scrapedDomains.map((domain) => {
+              const isActive = activeDomain === domain;
+              return (
+                <button
+                  key={domain}
+                  onClick={() => onSelectDomain(domain)}
+                  className={`w-full text-left p-3.5 rounded-xl border flex items-center gap-3 cursor-pointer transition-all duration-200 ${
+                    isActive 
+                      ? 'bg-zinc-50 dark:bg-[#141419] border-zinc-400 dark:border-zinc-700 text-zinc-900 dark:text-white shadow-sm font-semibold' 
+                      : 'bg-transparent border-zinc-200/60 dark:border-zinc-900 hover:bg-zinc-50 dark:hover:bg-[#0c0c0e] text-zinc-500 dark:text-zinc-400 hover:text-zinc-850 hover:border-zinc-350 dark:hover:border-zinc-800'
+                  }`}
+                >
+                  {/* Brand glyph */}
+                  <div className="h-6 w-6 rounded bg-zinc-900 dark:bg-zinc-800 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                    {domain.substring(0, 2).toUpperCase()}
                   </div>
-                </div>
+                  
+                  {/* Domain metadata */}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs truncate font-mono text-zinc-800 dark:text-zinc-200">
+                      {domain}
+                    </p>
+                  </div>
 
-                {/* Badges line */}
-                <div className="flex flex-wrap gap-1">
-                  {post.targetPlatforms.map((platform) => (
-                    <span 
-                      key={platform} 
-                      className="text-[9px] font-mono bg-zinc-105 dark:bg-[#09090b]/80 border border-zinc-200 dark:border-zinc-800/50 text-zinc-400 dark:text-zinc-500 px-1.5 py-0.5 rounded transition-colors duration-250"
-                    >
-                      {platform === 'LinkedIn' ? 'LN' : platform === 'Instagram' ? 'IG' : 'X'}
-                    </span>
-                  ))}
-                </div>
-              </button>
-            );
-          })}
+                  {/* Active Indicator */}
+                  {isActive && (
+                    <span className="h-2 w-2 rounded-full bg-green-500 shrink-0" />
+                  )}
+                </button>
+              );
+            })
+          )}
         </div>
       </div>
 
       {/* Bottom Settings Trigger */}
-      <div className="p-3 border-t border-zinc-200 dark:border-zinc-800/50 transition-colors duration-250">
+      <div className="p-3 border-t border-zinc-200 dark:border-zinc-800/50 transition-colors duration-250 bg-zinc-50/50 dark:bg-[#09090b]/50">
         <button
           onClick={onOpenSettings}
-          className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-md bg-zinc-100 hover:bg-zinc-200 dark:bg-[#0c0c0e] dark:hover:bg-[#18181b] border border-zinc-200 dark:border-zinc-800/50 text-zinc-650 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition text-xs font-medium transition-colors duration-250"
+          className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-white hover:bg-zinc-50 dark:bg-[#0c0c0e] dark:hover:bg-[#141419] border border-zinc-250 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition text-xs font-semibold shadow-sm cursor-pointer"
         >
           <svg 
             xmlns="http://www.w3.org/2000/svg" 
